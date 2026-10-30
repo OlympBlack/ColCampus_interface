@@ -58,7 +58,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
       setNomPlateforme(data.nom_plateforme || '')
       setSlogan(data.slogan || '')
       setDescription(data.description || '')
-      setLogoUrl(data.logo_url || '/logo-colcampus.png')
+      setLogoUrl(data.logo_url || '/assets/images/logo_colcampus.png')
       setCampusLocalisation(data.campus_localisation || '')
       setTelephone(data.telephone || '')
       setWhatsapp(data.whatsapp || '')
@@ -277,7 +277,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
                     alt="Aperçu du logo"
                     className="max-h-full max-w-full object-contain"
                     onError={(e) => {
-                      ;(e.target as HTMLImageElement).src = '/logo-colcampus.png'
+                      ;(e.target as HTMLImageElement).src = '/assets/images/logo_colcampus.png'
                     }}
                   />
                 </div>
@@ -318,7 +318,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
                     setLogoUrl(e.target.value)
                     setLogoPreview(null)
                   }}
-                  placeholder="/logo-colcampus.png"
+                  placeholder="/assets/images/logo_colcampus.png"
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                 />
               </div>

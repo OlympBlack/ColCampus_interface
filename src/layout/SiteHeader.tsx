@@ -482,6 +482,11 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
           <div className="colcampus-navbar-container">
             <a className="navbar-brand" href="#/" onClick={closeMenu}>
               <div className="header-brand-wrap">
+                <img
+                  src="/assets/images/logo_colcampus.png"
+                  alt="ColCampus"
+                  style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+                />
                 <h2>
                   Col <em>Campus</em>
                 </h2>

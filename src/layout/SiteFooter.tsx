@@ -37,6 +37,13 @@ export function SiteFooter() {
         <div className="container">
           <div className="row">
             <div className="col-md-3 footer-item">
+              <a href="#/" style={{ display: 'inline-block', marginBottom: '14px' }}>
+                <img
+                  src="/assets/images/logo_colcampus.png"
+                  alt="ColCampus"
+                  style={{ height: '44px', width: 'auto', objectFit: 'contain' }}
+                />
+              </a>
               <h4>{settings.nom_plateforme}</h4>
               <p>{settings.description}</p>
               <ul className="social-icons">
