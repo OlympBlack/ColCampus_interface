@@ -13,22 +13,28 @@ export function resolveMediaUrl(url: string | null | undefined): string {
   if (!url) return ''
   if (url.startsWith('blob:') || url.startsWith('data:')) return url
 
-  if (url.startsWith('/storage/') || url.startsWith('storage/')) {
-    const clean = url.startsWith('/') ? url : `/${url}`
+  let finalUrl = url
+  if (finalUrl.startsWith('/storage/') || finalUrl.startsWith('storage/')) {
+    const clean = finalUrl.startsWith('/') ? finalUrl : `/${finalUrl}`
     const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '')
-    return `${apiOrigin}${clean}`
+    finalUrl = `${apiOrigin}${clean}`
   }
 
-  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && url.includes('localhost:8000')) {
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && finalUrl.includes('localhost:8000')) {
     const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '')
-    return url.replace(/https?:\/\/localhost:8000/, apiOrigin)
+    finalUrl = finalUrl.replace(/https?:\/\/localhost:8000/, apiOrigin)
   }
 
-  return url
+  // Force HTTPS sur production si la page est en HTTPS (évite les erreurs Mixed Content du navigateur)
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && finalUrl.startsWith('http://')) {
+    finalUrl = finalUrl.replace('http://', 'https://')
+  }
+
+  return finalUrl
 }
 
 function formatTime(seconds: number) {
-  if (isNaN(seconds) || seconds < 0) return '0:00'
+  if (isNaN(seconds) || seconds < 0 || !isFinite(seconds)) return '0:00'
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs < 10 ? '0' : ''}${secs}`
@@ -36,25 +42,43 @@ function formatTime(seconds: number) {
 
 export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
   const waveSurferRef = useRef<WaveSurfer | null>(null)
+  const playerIdRef = useRef<string>(Math.random().toString(36).substring(2, 9))
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
-  const [totalDuration, setTotalDuration] = useState(duration ?? 0)
+  const [totalDuration, setTotalDuration] = useState<number>(() => {
+    if (duration && isFinite(duration) && duration > 0) return duration
+    return 0
+  })
+  const [isLoading, setIsLoading] = useState(true)
   const [playbackRate, setPlaybackRate] = useState(1)
-  const [isBuffering, setIsBuffering] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
   const resolvedSrc = resolveMediaUrl(src)
 
+  // Écoute de l'événement global pour mettre en pause dès qu'un autre audio démarre
   useEffect(() => {
-    if (!containerRef.current || !audioRef.current || !resolvedSrc) return
+    const handleStopAll = (e: Event) => {
+      const custom = e as CustomEvent<{ senderId: string }>
+      if (custom.detail?.senderId !== playerIdRef.current) {
+        if (waveSurferRef.current && waveSurferRef.current.isPlaying()) {
+          waveSurferRef.current.pause()
+          setIsPlaying(false)
+        }
+      }
+    }
+    window.addEventListener('colcampus:stop-all-audios', handleStopAll)
+    return () => window.removeEventListener('colcampus:stop-all-audios', handleStopAll)
+  }, [])
+
+  useEffect(() => {
+    if (!containerRef.current || !resolvedSrc) return
 
     let ws: WaveSurfer | null = null
 
     try {
       ws = WaveSurfer.create({
         container: containerRef.current,
-        media: audioRef.current,
         waveColor: isMine ? 'rgba(255, 255, 255, 0.45)' : '#cbd5e1',
         progressColor: isMine ? '#ffffff' : '#a4c639',
         cursorWidth: 0,
@@ -63,9 +87,20 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
         barRadius: 2,
         height: 28,
         normalize: true,
+        url: resolvedSrc,
       })
 
       waveSurferRef.current = ws
+
+      ws.on('ready', () => {
+        setIsLoading(false)
+        const d = ws?.getDuration() ?? duration ?? 0
+        if (isFinite(d) && d > 0) {
+          setTotalDuration(d)
+        } else if (duration && isFinite(duration) && duration > 0) {
+          setTotalDuration(duration)
+        }
+      })
 
       ws.on('play', () => setIsPlaying(true))
       ws.on('pause', () => setIsPlaying(false))
@@ -73,51 +108,61 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
         setIsPlaying(false)
         setCurrentTime(0)
       })
-      ws.on('timeupdate', (t) => {
-        setCurrentTime(t)
+
+      ws.on('timeupdate', (time) => {
+        if (isFinite(time)) {
+          setCurrentTime(time)
+        }
+      })
+
+      ws.on('error', (err) => {
+        console.warn('WaveSurfer loading error:', err)
+        setIsLoading(false)
+        setHasError(true)
       })
     } catch (e) {
-      console.warn('WaveSurfer initialization fallback:', e)
+      console.warn('WaveSurfer init error:', e)
+      setHasError(true)
+      setIsLoading(false)
     }
 
     return () => {
       try {
         ws?.destroy()
       } catch {
-        // ignore
+        // ignore cleanup error
       }
     }
-  }, [resolvedSrc, isMine])
+  }, [resolvedSrc, isMine, duration])
 
   const togglePlay = () => {
-    if (!audioRef.current) return
-
+    if (!waveSurferRef.current) return
     if (isPlaying) {
-      audioRef.current.pause()
+      waveSurferRef.current.pause()
     } else {
-      setIsBuffering(true)
-      audioRef.current.play()
-        .then(() => setIsBuffering(false))
-        .catch((err) => {
-          console.warn('Playback play() catch:', err)
-          setIsBuffering(false)
+      // Met en pause tout autre audio en cours de lecture dans la messagerie
+      window.dispatchEvent(
+        new CustomEvent('colcampus:stop-all-audios', {
+          detail: { senderId: playerIdRef.current },
         })
+      )
+      waveSurferRef.current.play()
     }
   }
 
   const cycleSpeed = () => {
+    if (!waveSurferRef.current) return
     const nextRate = playbackRate === 1 ? 1.5 : playbackRate === 1.5 ? 2 : 1
-    if (audioRef.current) {
-      audioRef.current.playbackRate = nextRate
-    }
-    if (waveSurferRef.current) {
-      try {
-        waveSurferRef.current.setPlaybackRate(nextRate)
-      } catch {
-        // ignore
-      }
-    }
+    waveSurferRef.current.setPlaybackRate(nextRate)
     setPlaybackRate(nextRate)
+  }
+
+  if (hasError) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+        <audio controls src={resolvedSrc} style={{ maxHeight: 36, maxWidth: 220 }} />
+      </div>
+    )
   }
 
   const buttonBg = isMine ? 'rgba(255, 255, 255, 0.25)' : '#a4c639'
@@ -136,37 +181,10 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
         padding: '2px 0',
       }}
     >
-      <audio
-        ref={audioRef}
-        src={resolvedSrc}
-        preload="metadata"
-        onPlay={() => {
-          setIsPlaying(true)
-          setIsBuffering(false)
-        }}
-        onPause={() => setIsPlaying(false)}
-        onEnded={() => {
-          setIsPlaying(false)
-          setCurrentTime(0)
-        }}
-        onTimeUpdate={() => {
-          if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime)
-          }
-        }}
-        onLoadedMetadata={() => {
-          if (audioRef.current && (!totalDuration || totalDuration <= 0)) {
-            setTotalDuration(audioRef.current.duration)
-          }
-          setIsBuffering(false)
-        }}
-        onWaiting={() => setIsBuffering(true)}
-        onCanPlay={() => setIsBuffering(false)}
-      />
-
       <button
         type="button"
         onClick={togglePlay}
+        disabled={isLoading}
         style={{
           width: '36px',
           height: '36px',
@@ -177,14 +195,14 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          cursor: 'pointer',
+          cursor: isLoading ? 'default' : 'pointer',
           flexShrink: 0,
           transition: 'all 0.15s ease',
           boxShadow: isMine ? 'none' : '0 2px 6px rgba(164, 198, 57, 0.3)',
         }}
         title={isPlaying ? 'Pause' : 'Écouter'}
       >
-        {isBuffering ? (
+        {isLoading ? (
           <span
             style={{
               width: 14,
@@ -204,7 +222,16 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
       </button>
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <div ref={containerRef} style={{ width: '100%', height: 28, cursor: 'pointer' }} />
+        <div
+          ref={containerRef}
+          style={{
+            width: '100%',
+            height: 28,
+            cursor: 'pointer',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        />
         <div
           style={{
             display: 'flex',

@@ -1,8 +1,38 @@
 /**
  * Utilitaire pour les notifications Web Push / Système du navigateur
- * Affiche des notifications même si l'onglet est en arrière-plan ou minimisé.
+ * Compatible Android Chrome (via Service Worker) et Desktop (Notification API).
  */
 
+let swRegistration: ServiceWorkerRegistration | null = null
+
+// Initialisation et enregistrement du Service Worker
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('/sw.js')
+    .then((reg) => {
+      swRegistration = reg
+    })
+    .catch((err) => {
+      console.warn('Erreur enregistrement Service Worker:', err)
+    })
+
+  // Écoute des messages venant du Service Worker (ex: clic sur notification)
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'COL_CAMPUS_OPEN_CHAT') {
+      window.dispatchEvent(new CustomEvent('open-messenger'))
+      window.dispatchEvent(
+        new CustomEvent('colcampus:open-chat', {
+          detail: { conversationId: event.data.conversationId },
+        })
+      )
+    }
+  })
+}
+
+/**
+ * Demande la permission à l'utilisateur pour les notifications.
+ * Doit être appelé suite à un clic ou une interaction utilisateur.
+ */
 export async function requestPushPermission(): Promise<boolean> {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return false
@@ -33,62 +63,77 @@ export interface WebNotificationOptions {
   onClick?: () => void
 }
 
-export function showWebPushNotification({
+/**
+ * Affiche la notification en haut du téléphone ou sur le bureau.
+ */
+export async function showWebPushNotification({
   title,
   body,
   icon = '/assets/images/logo_colcampus_icon.png',
   tag,
   data,
   onClick,
-}: WebNotificationOptions): Notification | null {
+}: WebNotificationOptions): Promise<void> {
   if (typeof window === 'undefined' || !('Notification' in window)) {
-    return null
+    return
   }
 
   if (Notification.permission !== 'granted') {
-    return null
+    return
   }
 
-  // Vibration haptique sur mobile (format: vibre 180ms, pause 80ms, vibre 180ms)
+  // Vibration haptique sur mobile
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try {
-      navigator.vibrate([180, 80, 180])
+      navigator.vibrate([200, 100, 200])
     } catch {
       // ignore
     }
   }
 
-  try {
-    const notif = new Notification(title, {
-      body,
-      icon,
-      badge: '/assets/images/logo_colcampus_icon.png',
-      tag: tag || 'colcampus-message',
-      data,
-    } as NotificationOptions)
+  const notificationOptions = {
+    body,
+    icon,
+    badge: '/assets/images/logo_colcampus_icon.png',
+    tag: tag || 'colcampus-message',
+    data: {
+      url: window.location.href,
+      conversationId: data?.conversationId,
+      ...data,
+    },
+    vibrate: [200, 100, 200],
+    renotify: true,
+  }
 
+  // 1. Sur Mobile Android Chrome, le Service Worker est INDISPENSABLE
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = swRegistration || (await navigator.serviceWorker.ready)
+      if (reg && reg.showNotification) {
+        await reg.showNotification(title, notificationOptions as any)
+        return
+      }
+    } catch (swErr) {
+      console.warn('Notification Service Worker warning:', swErr)
+    }
+  }
+
+  // 2. Fallback pour navigateurs Desktop classiques
+  try {
+    const notif = new Notification(title, notificationOptions as NotificationOptions)
     notif.onclick = () => {
       try {
         window.focus()
-      } catch {
-        // ignore
-      }
+      } catch {}
       notif.close()
       onClick?.()
     }
-
-    // Auto-fermeture après 8 secondes pour ne pas encombrer l'écran
     setTimeout(() => {
       try {
         notif.close()
-      } catch {
-        // ignore
-      }
+      } catch {}
     }, 8000)
-
-    return notif
   } catch (err) {
-    console.warn('Notification display failed:', err)
-    return null
+    console.warn('Fallback Notification constructor error:', err)
   }
 }
