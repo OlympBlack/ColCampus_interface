@@ -345,7 +345,7 @@ function Sidebar({
       >
         <div className="flex items-center justify-between border-b border-black/10 px-5 py-4 shrink-0">
           <a href="#/" className="flex items-center gap-2" onClick={onMobileClose}>
-            <img src="/assets/images/logo_colcampus.png" alt="ColCampus" className="h-10 w-auto object-contain" />
+            <img src="/assets/images/logo_colcampus.png" alt="ColCampus" className="h-9 w-auto max-w-[170px] object-contain" />
           </a>
           <button
             type="button"
@@ -641,7 +641,7 @@ function TopNavbar({
             <UiIcon name="menu" className="h-5 w-5" />
           </button>
           <a href="#/" className="flex items-center gap-2 min-w-0">
-            <img src="/assets/images/logo_colcampus_icon.png" alt="ColCampus" className="h-8 sm:h-9 w-auto object-contain md:hidden shrink-0" />
+            <img src="/assets/images/logo_colcampus_icon.png" alt="ColCampus" className="h-7 w-7 sm:h-8 sm:w-8 object-contain md:hidden shrink-0" />
             <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-900 truncate">
               Espace {user.role === 'etudiant' ? 'Étudiant' : user.role === 'demarcheur' ? 'Démarcheur' : user.role === 'boutique' ? 'Boutique' : 'Administration'}
             </span>

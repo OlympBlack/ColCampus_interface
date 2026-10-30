@@ -485,7 +485,7 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
                 <img
                   src="/assets/images/logo_colcampus_icon.png"
                   alt="ColCampus"
-                  style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+                  className="header-brand-logo"
                 />
                 <h2>
                   Col <em>Campus</em>

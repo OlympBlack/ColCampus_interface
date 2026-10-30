@@ -41,7 +41,7 @@ export function SiteFooter() {
                 <img
                   src="/assets/images/logo_colcampus.png"
                   alt="ColCampus"
-                  style={{ height: '44px', width: 'auto', objectFit: 'contain' }}
+                  style={{ height: '38px', maxWidth: '200px', width: 'auto', objectFit: 'contain' }}
                 />
               </a>
               <h4>{settings.nom_plateforme}</h4>
