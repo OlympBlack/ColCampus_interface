@@ -122,15 +122,6 @@ export function RegisterFlow({
     const file = event.target.files?.[0] ?? null
     const { name } = event.target
 
-    if (file && file.size > 10 * 1024 * 1024) {
-      onToast({
-        tone: 'error',
-        title: 'Image trop volumineuse',
-        message: 'La photo ne doit pas dépasser 10 Mo. Veuillez sélectionner une image plus légère.',
-      })
-      return
-    }
-
     if (name === 'photo_profil' && file) {
       setPhotoPreview(URL.createObjectURL(file))
     }

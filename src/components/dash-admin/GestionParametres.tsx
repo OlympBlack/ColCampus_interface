@@ -88,14 +88,6 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        onToast({
-          tone: 'error',
-          title: 'Fichier trop volumineux',
-          message: 'La taille maximale autorisée pour le logo est de 5 Mo.',
-        })
-        return
-      }
       setLogoFile(file)
       setLogoPreview(URL.createObjectURL(file))
     }
