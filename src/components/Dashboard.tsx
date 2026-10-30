@@ -641,7 +641,7 @@ function TopNavbar({
             <UiIcon name="menu" className="h-5 w-5" />
           </button>
           <a href="#/" className="flex items-center gap-2 min-w-0">
-            <img src="/assets/images/logo_colcampus.png" alt="ColCampus" className="h-8 sm:h-9 w-auto object-contain md:hidden shrink-0" />
+            <img src="/assets/images/logo_colcampus_icon.png" alt="ColCampus" className="h-8 sm:h-9 w-auto object-contain md:hidden shrink-0" />
             <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-900 truncate">
               Espace {user.role === 'etudiant' ? 'Étudiant' : user.role === 'demarcheur' ? 'Démarcheur' : user.role === 'boutique' ? 'Boutique' : 'Administration'}
             </span>
