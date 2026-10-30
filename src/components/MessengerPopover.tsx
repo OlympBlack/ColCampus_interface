@@ -6,7 +6,8 @@ import { useChat } from '../hooks/useChat'
 import { fetchDashboard } from '../services/api'
 import { AudioMessagePlayer } from './AudioMessagePlayer'
 import { AudioVoiceRecorder } from './AudioVoiceRecorder'
-import { requestPushPermission } from '../utils/webPush'
+import { requestPushPermission, showWebPushNotification } from '../utils/webPush'
+import { playMagicChime } from '../utils/audioChime'
 
 export interface MessengerPopoverProps {
   session: AuthSession
@@ -104,6 +105,131 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
   const isUserNearBottomRef = useRef(true)
   const prevMessagesCountRef = useRef(0)
   const activeConversationIdRef = useRef<number | null>(null)
+
+  const [pushPermission, setPushPermission] = useState<string>(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission
+    }
+    return 'denied'
+  })
+  const [pushTestSuccess, setPushTestSuccess] = useState(false)
+
+  // Met à jour la permission si l'utilisateur change les réglages
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPushPermission(Notification.permission)
+    }
+  }, [isOpen])
+
+  const handleEnablePush = async () => {
+    const granted = await requestPushPermission()
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPushPermission(Notification.permission)
+    }
+    if (granted) {
+      playMagicChime()
+      await showWebPushNotification({
+        title: 'ColCampus Messagerie',
+        body: '🎉 Notifications activées avec succès sur votre téléphone !',
+        icon: '/assets/images/logo_colcampus_icon.png',
+      })
+      setPushTestSuccess(true)
+      setTimeout(() => setPushTestSuccess(false), 5000)
+    }
+  }
+
+  const handleTestPush = async () => {
+    playMagicChime()
+    await showWebPushNotification({
+      title: 'ColCampus Messagerie',
+      body: '🔔 Test : Vos notifications en haut du téléphone fonctionnent parfaitement !',
+      icon: '/assets/images/logo_colcampus_icon.png',
+    })
+    setPushTestSuccess(true)
+    setTimeout(() => setPushTestSuccess(false), 5000)
+  }
+
+  const renderPushBanner = () => {
+    if (pushPermission === 'granted') {
+      return (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            padding: '6px 14px',
+            background: '#f0fdf4',
+            borderBottom: '1px solid #dcfce7',
+            fontSize: '11px',
+            color: '#166534',
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            {pushTestSuccess ? '🔔 Notification envoyée en haut !' : '✅ Notifications push actives sur ce téléphone'}
+          </span>
+          <button
+            type="button"
+            onClick={handleTestPush}
+            style={{
+              background: '#16a34a',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '2px 8px',
+              fontSize: '10.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+            title="Tester la notification en haut du téléphone"
+          >
+            Tester
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+          padding: '8px 14px',
+          background: '#fef3c7',
+          borderBottom: '1px solid #fde68a',
+          fontSize: '11.5px',
+          color: '#92400e',
+          flexShrink: 0,
+        }}
+      >
+        <span style={{ lineHeight: 1.3 }}>
+          🔔 <strong>Notifications du téléphone</strong> : activez pour être alerté en haut de l'écran.
+        </span>
+        <button
+          type="button"
+          onClick={handleEnablePush}
+          style={{
+            background: '#d97706',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '4px 10px',
+            fontSize: '11px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          Activer
+        </button>
+      </div>
+    )
+  }
+
 
   // Lock body scroll while messenger popover is open
   useEffect(() => {
@@ -534,7 +660,9 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
               </div>
             </div>
 
-            <div style={{ padding: '0 16px 16px' }}>
+            {renderPushBanner()}
+
+            <div style={{ padding: '8px 16px 16px' }}>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
                   <UiIcon name="search" />
@@ -748,6 +876,8 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                   <strong>ColCampus Sécurisé</strong> · Ne versez aucun acompte avant visite préalable du bien.
                 </span>
               </div>
+
+              {renderPushBanner()}
 
               <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="colcampus-smooth-scroll" style={styles.messagesList}>
                 {loadingMessages && messages.length === 0 ? (

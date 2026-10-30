@@ -532,7 +532,25 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
                   )}
                 </div>
               ) : (
-                <a className="header-login-btn d-lg-none" href="#/connexion" onClick={closeMenu} style={{ padding: '6px 12px', fontSize: 13, borderRadius: 10 }}>
+                <a
+                  className="header-login-btn header-login-btn-mobile d-lg-none"
+                  href="#/connexion"
+                  onClick={closeMenu}
+                  style={{
+                    padding: '7px 16px',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    borderRadius: 9999,
+                    background: '#a4c639',
+                    color: '#ffffff',
+                    border: '1px solid #8fad26',
+                    boxShadow: '0 3px 10px rgba(164, 198, 57, 0.4)',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    lineHeight: 1,
+                  }}
+                >
                   Connexion
                 </a>
               )}
