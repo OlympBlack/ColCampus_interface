@@ -1,29 +1,37 @@
+name: Build & Deploy Frontend
+
 on: 
   push: 
     branches: [main]
 
-name: Deploy website on push
-
 jobs:
   web-deploy:
-    name: Deploy
+    name: Build & Deploy Frontend
     runs-on: ubuntu-latest
     steps:
-      # Récupère le code source du dépôt GitHub dans le runner
       - name: Get latest code
         uses: actions/checkout@v4
 
-      # Envoie les fichiers du dossier backend/ vers le serveur via FTP
-      # Les fichiers sensibles (.env, vendor, .git) sont exclus
-      - name: Sync files
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Sync dist files directly to domain
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ./
-          local-dir: ./
+          local-dir: ./dist/
           exclude: |
             **/.git*
             **/.git*/**
-            **/.env
