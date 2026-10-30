@@ -122,6 +122,15 @@ export function RegisterFlow({
     const file = event.target.files?.[0] ?? null
     const { name } = event.target
 
+    if (file && file.size > 10 * 1024 * 1024) {
+      onToast({
+        tone: 'error',
+        title: 'Image trop volumineuse',
+        message: 'La photo ne doit pas dépasser 10 Mo. Veuillez sélectionner une image plus légère.',
+      })
+      return
+    }
+
     if (name === 'photo_profil' && file) {
       setPhotoPreview(URL.createObjectURL(file))
     }
@@ -149,14 +158,13 @@ export function RegisterFlow({
       form.prenoms.trim() &&
       form.email.trim() &&
       form.password.length >= 8 &&
-      form.telephone.trim() &&
-      form.photo_profil.size > 0
+      form.telephone.trim()
     )
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!role || form.photo_profil.size === 0) return
+    if (!role) return
 
     setSubmitting(true)
     setError(null)
@@ -383,20 +391,31 @@ export function RegisterFlow({
                             <polyline points="17 8 12 3 7 8" />
                             <line x1="12" y1="3" x2="12" y2="15" />
                           </svg>
-                          <span>{photoPreview ? 'Modifier' : 'Choisir une photo'}</span>
+                          <span>{photoPreview ? 'Modifier' : 'Ajouter une photo (optionnel)'}</span>
                           <input
                             type="file"
                             name="photo_profil"
-                            accept="image/png,image/jpeg"
+                            accept="image/png,image/jpeg,image/webp"
                             onChange={onFileChange}
-                            required
                             className="hidden"
                           />
                         </label>
                         {form.photo_profil.size > 0 ? (
-                          <p className="text-xs text-green-700 font-medium truncate">✓ {form.photo_profil.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-green-700 font-medium truncate">✓ {form.photo_profil.name}</p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPhotoPreview(null)
+                                setForm((prev) => ({ ...prev, photo_profil: new File([], '') }))
+                              }}
+                              className="text-[11px] text-rose-600 hover:underline cursor-pointer"
+                            >
+                              Retirer
+                            </button>
+                          </div>
                         ) : (
-                          <p className="text-[11px] text-slate-500">PNG ou JPG · max 5 Mo</p>
+                          <p className="text-[11px] text-slate-500">PNG, JPG ou WEBP · max 10 Mo (optionnel)</p>
                         )}
                       </div>
                     </div>

@@ -162,6 +162,9 @@ function appendValue(formData: FormData, key: string, value: string | number | F
   if (value === undefined || value === null || value === '') {
     return
   }
+  if (value instanceof File && value.size === 0) {
+    return
+  }
 
   formData.append(key, value instanceof File ? value : String(value))
 }
