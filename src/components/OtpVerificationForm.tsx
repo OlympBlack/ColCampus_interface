@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react'
+import { useMemo, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react'
 import { resendOtp, verifyOtp } from '../services/api'
 import {
   clearPendingVerificationEmail,
@@ -21,7 +21,7 @@ export function OtpVerificationForm({
   onSuccess: () => void
   onToast: (toast: ToastDraft) => void
 }) {
-  const [email, setEmail] = useState(() => getPendingVerificationEmail() ?? '')
+  const [email] = useState(() => getPendingVerificationEmail() ?? '')
   const [otpDigits, setOtpDigits] = useState<string[]>(() => Array.from({ length: OTP_LENGTH }, () => ''))
   const [notice, setNotice] = useState<string | null>(() => consumeVerificationNotice())
   const [error, setError] = useState<string | null>(null)
@@ -146,12 +146,6 @@ export function OtpVerificationForm({
     }
   }
 
-  function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
-    const nextEmail = event.target.value
-    setEmail(nextEmail)
-    setPendingVerificationEmail(nextEmail)
-  }
-
   return (
     <div className="fixed inset-0 z-50 bg-white w-full h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
       <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 relative bg-green-950 flex-col justify-between p-8 xl:p-12 shrink-0 overflow-hidden">
@@ -211,18 +205,16 @@ export function OtpVerificationForm({
 
           <form onSubmit={handleSubmit} className="w-full">
             <div className="flex flex-col gap-4">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs sm:text-sm font-medium text-slate-700">Adresse email</span>
-                <input
-                  type="email"
-                  name="email"
-                  value={email}
-                  onChange={handleEmailChange}
-                  placeholder="etudiant@campus.bj"
-                  required
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 sm:py-3 text-sm text-slate-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all placeholder:text-slate-400 bg-white hover:border-slate-300"
-                />
-              </label>
+              {email ? (
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 flex items-center justify-between text-xs sm:text-sm">
+                  <span className="text-slate-500 font-medium">Code envoyé à :</span>
+                  <span className="font-semibold text-slate-800 truncate max-w-[220px] sm:max-w-[280px]">{email}</span>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                  Aucun compte en attente. <a href="#/inscription" className="underline font-semibold">Inscrivez-vous ici</a> ou <a href="#/connexion" className="underline font-semibold">connectez-vous</a>.
+                </div>
+              )}
               <label className="flex flex-col gap-2">
                 <span className="text-xs sm:text-sm font-medium text-slate-700">Code OTP</span>
                 <div className="flex items-center justify-between gap-2 sm:gap-3">
