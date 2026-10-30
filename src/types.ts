@@ -297,7 +297,10 @@ export interface ConversationMessage {
   id: number
   conversation_id: number
   user_id: number
+  type?: 'text' | 'audio'
   content: string
+  media_url?: string | null
+  duration?: number | null
   is_read: boolean
   created_at: string | null
   user: ConversationParticipant | null

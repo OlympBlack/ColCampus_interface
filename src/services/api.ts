@@ -481,11 +481,35 @@ export async function sendAnnouncementMessage(token: string, annonceId: number, 
   })
 }
 
-export async function sendConversationMessage(token: string, conversationId: number, message: string) {
+export async function sendConversationMessage(
+  token: string,
+  conversationId: number,
+  payload: string | { message?: string; audio?: Blob; duration?: number }
+) {
+  if (typeof payload === 'string') {
+    return requestJson<{ message: string; data: ConversationThreadData }>(`/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      headers: withAuthHeaders(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ message: payload }),
+    })
+  }
+
+  const formData = new FormData()
+  if (payload.message) {
+    formData.append('message', payload.message)
+  }
+  if (payload.audio) {
+    const isM4a = payload.audio.type?.includes('mp4') || payload.audio.type?.includes('aac')
+    formData.append('audio', payload.audio, `vocal_${Date.now()}.${isM4a ? 'm4a' : 'webm'}`)
+  }
+  if (payload.duration != null) {
+    formData.append('duration', String(Math.round(payload.duration)))
+  }
+
   return requestJson<{ message: string; data: ConversationThreadData }>(`/conversations/${conversationId}/messages`, {
     method: 'POST',
-    headers: withAuthHeaders(token, { 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ message }),
+    headers: withAuthHeaders(token),
+    body: formData,
   })
 }
 

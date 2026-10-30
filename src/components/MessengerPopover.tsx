@@ -4,6 +4,8 @@ import type { AuthSession, ConversationThreadInfo, ConversationMessage } from '.
 import { UiIcon } from './UiIcons'
 import { useChat } from '../hooks/useChat'
 import { fetchDashboard } from '../services/api'
+import { AudioMessagePlayer } from './AudioMessagePlayer'
+import { AudioVoiceRecorder } from './AudioVoiceRecorder'
 
 export interface MessengerPopoverProps {
   session: AuthSession
@@ -94,6 +96,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
   } = useChat(session, initialData, onUnreadChange ? () => onUnreadChange() : undefined)
 
   const [messageDraft, setMessageDraft] = useState('')
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isUserNearBottomRef = useRef(true)
@@ -248,6 +251,16 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     }
   }
 
+  const handleSendAudio = async (audioBlob: Blob, duration: number) => {
+    setIsRecordingAudio(false)
+    try {
+      await sendMessage({ audio: audioBlob, duration })
+      setTimeout(() => scrollToBottom('smooth'), 50)
+    } catch (err) {
+      console.error("Échec d'envoi du message vocal:", err)
+    }
+  }
+
   const handleQuickPrompt = (promptText: string) => {
     setMessageDraft(promptText)
     setTimeout(() => {
@@ -266,8 +279,13 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
   useEffect(() => {
     if (!isOpen) {
       setActiveConversation(null)
+      setIsRecordingAudio(false)
     }
   }, [isOpen, setActiveConversation])
+
+  useEffect(() => {
+    setIsRecordingAudio(false)
+  }, [activeConversation?.id])
 
   const filteredDiscussions = discussions.filter(d => {
     const partner = d.conversation.sender_id === session.user.id ? d.conversation.receiver : d.conversation.sender
@@ -568,7 +586,13 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                                 <MessageStatus isMine isRead={d.last_message?.is_read ?? false} isPartnerOnline={isOnline} />{' '}
                               </>
                             ) : ''}
-                            {d.last_message?.content || 'Nouvelle conversation'}
+                            {d.last_message?.type === 'audio' || d.last_message?.media_url ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <UiIcon name="mic" /> Message vocal {d.last_message.duration ? `(${d.last_message.duration}s)` : ''}
+                              </span>
+                            ) : (
+                              d.last_message?.content || 'Nouvelle conversation'
+                            )}
                           </span>
                           {isUnread && <div className="fb-unread-dot" />}
                         </div>
@@ -742,9 +766,14 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                             border: isMine ? 'none' : '1px solid #e5e7eb',
                             borderRadius: isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                             boxShadow: isMine ? '0 3px 10px rgba(138,173,42,0.22)' : '0 1px 3px rgba(0,0,0,0.04)',
+                            minWidth: m.type === 'audio' || m.media_url ? '220px' : undefined,
                           }}
                         >
-                          {m.content}
+                          {m.type === 'audio' || m.media_url ? (
+                            <AudioMessagePlayer src={m.media_url!} duration={m.duration} isMine={isMine} />
+                          ) : (
+                            m.content
+                          )}
                         </div>
                         <div className="bubble-time-under" style={{ padding: isMine ? '0 4px 0 0' : '0 0 0 4px' }}>
                           <span>{formatRelativeTime(m.created_at)}</span>
@@ -756,25 +785,56 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                 )}
               </div>
 
-              <form onSubmit={handleSend} style={styles.inputWrapper}>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder={`Écrivez à ${partnerName}...`}
-                  value={messageDraft}
-                  onChange={e => setMessageDraft(e.target.value)}
-                  onFocus={handleInputFocus}
-                  style={styles.chatInput}
-                  autoComplete="off"
-                />
-                <button type="submit" disabled={!messageDraft.trim() || sending} style={{ ...styles.sendBtn, opacity: !messageDraft.trim() || sending ? 0.45 : 1, cursor: !messageDraft.trim() || sending ? 'not-allowed' : 'pointer' }} title="Envoyer le message" aria-label="Envoyer">
-                  {sending ? (
-                    <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
-                  ) : (
-                    <UiIcon name="send" />
-                  )}
-                </button>
-              </form>
+              <div style={styles.inputWrapper}>
+                {isRecordingAudio ? (
+                  <AudioVoiceRecorder
+                    onSend={handleSendAudio}
+                    onCancel={() => setIsRecordingAudio(false)}
+                  />
+                ) : (
+                  <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      placeholder={`Écrivez à ${partnerName}...`}
+                      value={messageDraft}
+                      onChange={e => setMessageDraft(e.target.value)}
+                      onFocus={handleInputFocus}
+                      style={styles.chatInput}
+                      autoComplete="off"
+                    />
+                    {messageDraft.trim() ? (
+                      <button
+                        type="submit"
+                        disabled={sending}
+                        style={{
+                          ...styles.sendBtn,
+                          opacity: sending ? 0.45 : 1,
+                          cursor: sending ? 'not-allowed' : 'pointer',
+                        }}
+                        title="Envoyer le message"
+                        aria-label="Envoyer"
+                      >
+                        {sending ? (
+                          <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+                        ) : (
+                          <UiIcon name="send" />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsRecordingAudio(true)}
+                        style={styles.sendBtn}
+                        title="Enregistrer un message vocal"
+                        aria-label="Enregistrer un message vocal"
+                      >
+                        <UiIcon name="mic" />
+                      </button>
+                    )}
+                  </form>
+                )}
+              </div>
             </>
           )
         })()}

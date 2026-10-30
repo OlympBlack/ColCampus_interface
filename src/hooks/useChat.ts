@@ -101,12 +101,14 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
         return () => clearInterval(interval)
     }, [activeConversation, session.token])
 
-    const sendMessage = async (content: string) => {
-        if (!activeConversation || !content.trim() || sending) return
+    const sendMessage = async (payload: string | { message?: string; audio?: Blob; duration?: number }) => {
+        if (!activeConversation || sending) return
+        if (typeof payload === 'string' && !payload.trim()) return
+        if (typeof payload !== 'string' && !payload.message?.trim() && !payload.audio) return
 
         setSending(true)
         try {
-            const res = await sendConversationMessage(session.token, activeConversation.id, content)
+            const res = await sendConversationMessage(session.token, activeConversation.id, payload)
 
             // Update messages locally
             setMessages(res.data.messages)
