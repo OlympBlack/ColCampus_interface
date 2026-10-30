@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import { API_BASE_URL } from '../services/api'
 
 ;(window as any).Pusher = Pusher as any
 
@@ -25,7 +26,7 @@ export const echo = new Echo({
                 }
 
         // Target the broadcasting/auth endpoint within the API group
-        const authUrl = `${import.meta.env.VITE_API_BASE_URL}/broadcasting/auth`;
+        const authUrl = `${API_BASE_URL}/broadcasting/auth`;
 
         fetch(authUrl, {
           method: 'POST',

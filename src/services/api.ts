@@ -92,14 +92,25 @@ function resolveApiBaseUrls() {
     return candidates
   }
 
+  const hostname = window.location.hostname
   const protocol = window.location.protocol
-  candidates.push(
-    `${protocol}//${window.location.hostname}:${apiPort}/api`,
-    `${protocol}//localhost:${apiPort}/api`,
-    `${protocol}//127.0.0.1:${apiPort}/api`,
-    'http://127.0.0.1:8000/api',
-    'http://localhost:8000/api'
-  )
+
+  // Détection automatique de la production (sous-domaine de lavoixdabouloussi.org)
+  if (hostname.includes('lavoixdabouloussi.org')) {
+    candidates.push('https://colcampusapi.lavoixdabouloussi.org/api')
+  }
+
+  // Environnement local (localhost, 127.0.0.1 ou IP de dev locale)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    candidates.push(
+      `${protocol}//${hostname}:${apiPort}/api`,
+      'http://127.0.0.1:8000/api',
+      'http://localhost:8000/api'
+    )
+  } else if (!hostname.includes('lavoixdabouloussi.org')) {
+    // Autre hôte (ex: test sur réseau local)
+    candidates.push(`${protocol}//${hostname}:${apiPort}/api`)
+  }
 
   return Array.from(new Set(candidates))
 }
