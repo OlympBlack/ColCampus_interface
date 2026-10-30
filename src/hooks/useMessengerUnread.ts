@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { echo } from '../lib/echo'
 import { fetchDashboard } from '../services/api'
 import type { AuthSession, ConversationMessage } from '../types'
+import { playMagicChime } from '../utils/audioChime'
+import { showWebPushNotification } from '../utils/webPush'
 
 export function useMessengerUnread(session: AuthSession | null) {
   const [unreadCount, setUnreadCount] = useState<number>(0)
@@ -60,6 +62,26 @@ export function useMessengerUnread(session: AuthSession | null) {
             setUnreadCount(unreadConvIdsRef.current.size)
           }
         }
+
+        // Jouer le son magique "cloohummmm"
+        playMagicChime()
+
+        // Déclencher la notification Push système du navigateur
+        const partner = data?.conversation?.sender_id === userId ? data?.conversation?.receiver : data?.conversation?.sender
+        const partnerName = partner?.prenoms || partner?.name || 'Nouveau message'
+        const isAudio = data?.message?.type === 'audio' || Boolean(data?.message?.media_url)
+        const preview = isAudio ? '🎤 Nouveau message vocal' : (data?.message?.content || 'Vous a envoyé un message')
+
+        showWebPushNotification({
+          title: `${partnerName} sur ColCampus`,
+          body: preview,
+          icon: partner?.photo_profil || '/assets/images/logo_colcampus_icon.png',
+          tag: convId ? `colcampus-conv-${convId}` : 'colcampus-chat',
+          onClick: () => {
+            window.dispatchEvent(new CustomEvent('open-messenger'))
+            window.dispatchEvent(new CustomEvent('colcampus:open-chat', { detail: { conversationId: convId } }))
+          },
+        })
       }
       void refreshUnreadCount()
     }

@@ -169,6 +169,8 @@ export function AudioVoiceRecorder({ onSend, onCancel }: AudioVoiceRecorderProps
         alignItems: 'center',
         gap: '12px',
         width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
         backgroundColor: '#f8fafc',
         borderRadius: '16px',
         padding: '6px 14px',

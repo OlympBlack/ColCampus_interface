@@ -1,11 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import WaveSurfer from 'wavesurfer.js'
 import { UiIcon } from './UiIcons'
+import { API_BASE_URL } from '../services/api'
 
 interface AudioMessagePlayerProps {
   src: string
   duration?: number | null
   isMine: boolean
+}
+
+export function resolveMediaUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  if (url.startsWith('blob:') || url.startsWith('data:')) return url
+
+  if (url.startsWith('/storage/') || url.startsWith('storage/')) {
+    const clean = url.startsWith('/') ? url : `/${url}`
+    const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '')
+    return `${apiOrigin}${clean}`
+  }
+
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && url.includes('localhost:8000')) {
+    const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, '')
+    return url.replace(/https?:\/\/localhost:8000/, apiOrigin)
+  }
+
+  return url
 }
 
 function formatTime(seconds: number) {
@@ -17,22 +36,25 @@ function formatTime(seconds: number) {
 
 export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
   const waveSurferRef = useRef<WaveSurfer | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [totalDuration, setTotalDuration] = useState(duration ?? 0)
-  const [isLoading, setIsLoading] = useState(true)
   const [playbackRate, setPlaybackRate] = useState(1)
-  const [hasError, setHasError] = useState(false)
+  const [isBuffering, setIsBuffering] = useState(false)
+
+  const resolvedSrc = resolveMediaUrl(src)
 
   useEffect(() => {
-    if (!containerRef.current || !src) return
+    if (!containerRef.current || !audioRef.current || !resolvedSrc) return
 
     let ws: WaveSurfer | null = null
 
     try {
       ws = WaveSurfer.create({
         container: containerRef.current,
+        media: audioRef.current,
         waveColor: isMine ? 'rgba(255, 255, 255, 0.45)' : '#cbd5e1',
         progressColor: isMine ? '#ffffff' : '#a4c639',
         cursorWidth: 0,
@@ -41,16 +63,9 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
         barRadius: 2,
         height: 28,
         normalize: true,
-        url: src,
       })
 
       waveSurferRef.current = ws
-
-      ws.on('ready', () => {
-        setIsLoading(false)
-        const d = ws?.getDuration() ?? duration ?? 0
-        setTotalDuration(d)
-      })
 
       ws.on('play', () => setIsPlaying(true))
       ws.on('pause', () => setIsPlaying(false))
@@ -58,49 +73,51 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
         setIsPlaying(false)
         setCurrentTime(0)
       })
-
-      ws.on('timeupdate', (currentTime) => {
-        setCurrentTime(currentTime)
-      })
-
-      ws.on('error', (err) => {
-        console.warn('WaveSurfer loading error:', err)
-        setIsLoading(false)
-        setHasError(true)
+      ws.on('timeupdate', (t) => {
+        setCurrentTime(t)
       })
     } catch (e) {
-      console.warn('WaveSurfer init error:', e)
-      setHasError(true)
-      setIsLoading(false)
+      console.warn('WaveSurfer initialization fallback:', e)
     }
 
     return () => {
       try {
         ws?.destroy()
       } catch {
-        // ignore cleanup error
+        // ignore
       }
     }
-  }, [src, isMine, duration])
+  }, [resolvedSrc, isMine])
 
   const togglePlay = () => {
-    if (!waveSurferRef.current) return
-    waveSurferRef.current.playPause()
+    if (!audioRef.current) return
+
+    if (isPlaying) {
+      audioRef.current.pause()
+    } else {
+      setIsBuffering(true)
+      audioRef.current.play()
+        .then(() => setIsBuffering(false))
+        .catch((err) => {
+          console.warn('Playback play() catch:', err)
+          setIsBuffering(false)
+        })
+    }
   }
 
   const cycleSpeed = () => {
-    if (!waveSurferRef.current) return
     const nextRate = playbackRate === 1 ? 1.5 : playbackRate === 1.5 ? 2 : 1
-    waveSurferRef.current.setPlaybackRate(nextRate)
+    if (audioRef.current) {
+      audioRef.current.playbackRate = nextRate
+    }
+    if (waveSurferRef.current) {
+      try {
+        waveSurferRef.current.setPlaybackRate(nextRate)
+      } catch {
+        // ignore
+      }
+    }
     setPlaybackRate(nextRate)
-  }
-
-  if (hasError) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-        <audio controls src={src} style={{ maxHeight: 36, maxWidth: 220 }} />
-      </div>
-    )
   }
 
   const buttonBg = isMine ? 'rgba(255, 255, 255, 0.25)' : '#a4c639'
@@ -119,10 +136,37 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
         padding: '2px 0',
       }}
     >
+      <audio
+        ref={audioRef}
+        src={resolvedSrc}
+        preload="metadata"
+        onPlay={() => {
+          setIsPlaying(true)
+          setIsBuffering(false)
+        }}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(false)
+          setCurrentTime(0)
+        }}
+        onTimeUpdate={() => {
+          if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime)
+          }
+        }}
+        onLoadedMetadata={() => {
+          if (audioRef.current && (!totalDuration || totalDuration <= 0)) {
+            setTotalDuration(audioRef.current.duration)
+          }
+          setIsBuffering(false)
+        }}
+        onWaiting={() => setIsBuffering(true)}
+        onCanPlay={() => setIsBuffering(false)}
+      />
+
       <button
         type="button"
         onClick={togglePlay}
-        disabled={isLoading}
         style={{
           width: '36px',
           height: '36px',
@@ -133,14 +177,14 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          cursor: isLoading ? 'default' : 'pointer',
+          cursor: 'pointer',
           flexShrink: 0,
           transition: 'all 0.15s ease',
           boxShadow: isMine ? 'none' : '0 2px 6px rgba(164, 198, 57, 0.3)',
         }}
         title={isPlaying ? 'Pause' : 'Écouter'}
       >
-        {isLoading ? (
+        {isBuffering ? (
           <span
             style={{
               width: 14,

@@ -5,6 +5,7 @@ import {
     sendConversationMessage,
     markConversationAsRead,
 } from '../services/api'
+import { playMagicChime } from '../utils/audioChime'
 import type {
     AuthSession,
     ConversationThreadInfo,
@@ -188,6 +189,10 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
                     if (prev.some(m => m.id === message.id)) return prev
                     return [...prev, message]
                 })
+
+                if (message.user_id !== session.user.id) {
+                    playMagicChime()
+                }
                 
                 // Mark as read on server since we are looking at it
                 markConversationAsRead(session.token, conversation.id).catch(console.error)

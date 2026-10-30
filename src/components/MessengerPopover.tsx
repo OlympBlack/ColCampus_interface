@@ -6,6 +6,7 @@ import { useChat } from '../hooks/useChat'
 import { fetchDashboard } from '../services/api'
 import { AudioMessagePlayer } from './AudioMessagePlayer'
 import { AudioVoiceRecorder } from './AudioVoiceRecorder'
+import { requestPushPermission } from '../utils/webPush'
 
 export interface MessengerPopoverProps {
   session: AuthSession
@@ -289,8 +290,26 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     if (!isOpen) {
       setActiveConversation(null)
       setIsRecordingAudio(false)
+    } else {
+      // Demande de permission push navigateur à l'ouverture de la messagerie
+      requestPushPermission().catch(() => {})
     }
   }, [isOpen, setActiveConversation])
+
+  useEffect(() => {
+    const handleOpenSpecificChat = (e: Event) => {
+      const customEvent = e as CustomEvent<{ conversationId?: number }>
+      const convId = customEvent.detail?.conversationId
+      if (convId && discussions.length > 0) {
+        const found = discussions.find(d => d.conversation.id === convId)
+        if (found) {
+          setActiveConversation(found.conversation)
+        }
+      }
+    }
+    window.addEventListener('colcampus:open-chat', handleOpenSpecificChat)
+    return () => window.removeEventListener('colcampus:open-chat', handleOpenSpecificChat)
+  }, [discussions, setActiveConversation])
 
   useEffect(() => {
     setIsRecordingAudio(false)
@@ -831,7 +850,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                     onCancel={() => setIsRecordingAudio(false)}
                   />
                 ) : (
-                  <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+                  <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
                     <input
                       ref={inputRef}
                       type="text"
@@ -959,11 +978,12 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'pre-wrap',
   },
   inputWrapper: {
-    padding: '16px 20px',
-    paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+    padding: '12px 18px',
+    paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
     borderTop: '1px solid #f1f5f9',
     display: 'flex',
-    gap: '12px',
+    boxSizing: 'border-box',
+    width: '100%',
     backgroundColor: '#fff',
     alignItems: 'center',
     flexShrink: 0,
@@ -971,30 +991,34 @@ const styles: Record<string, React.CSSProperties> = {
   },
   chatInput: {
     flex: 1,
-    height: '48px',
+    minWidth: 0,
+    boxSizing: 'border-box',
+    height: '44px',
     backgroundColor: '#f1f5f9',
     border: 'none',
     borderRadius: '16px',
-    padding: '0 18px',
-    fontSize: '16px',
+    padding: '0 16px',
+    fontSize: '15px',
     fontWeight: 500,
     outline: 'none',
     color: '#0f172a',
     WebkitAppearance: 'none',
   },
   sendBtn: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '16px',
+    width: '42px',
+    height: '42px',
+    borderRadius: '50%',
     backgroundColor: '#a4c639',
     color: '#fff',
     border: 'none',
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
+    flexShrink: 0,
+    boxSizing: 'border-box',
     transition: 'all 0.2s',
-    boxShadow: '0 8px 16px rgba(138, 173, 42, 0.25)',
+    boxShadow: '0 4px 12px rgba(138, 173, 42, 0.25)',
   },
   empty: {
     padding: '60px 20px',
