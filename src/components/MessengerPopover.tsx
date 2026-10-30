@@ -96,22 +96,133 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
   const [messageDraft, setMessageDraft] = useState('')
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const isUserNearBottomRef = useRef(true)
+  const prevMessagesCountRef = useRef(0)
+  const activeConversationIdRef = useRef<number | null>(null)
+
+  // Lock body scroll while messenger popover is open
+  useEffect(() => {
+    if (!isOpen) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isOpen])
+
+  // Track visualViewport on mobile to ensure input is never obscured by the virtual keyboard
+  const [mobileViewport, setMobileViewport] = useState<{ height: number; top: number } | null>(null)
 
   useEffect(() => {
+    if (!isOpen) return
+
+    const updateViewport = () => {
+      if (window.innerWidth >= 768) {
+        setMobileViewport(null)
+        return
+      }
+
+      if (window.visualViewport) {
+        const vv = window.visualViewport
+        setMobileViewport({
+          height: Math.round(vv.height),
+          top: Math.round(vv.offsetTop),
+        })
+      } else {
+        setMobileViewport({
+          height: window.innerHeight,
+          top: 0,
+        })
+      }
+    }
+
+    updateViewport()
+
+    const vv = window.visualViewport
+    if (vv) {
+      vv.addEventListener('resize', updateViewport)
+      vv.addEventListener('scroll', updateViewport)
+    }
+    window.addEventListener('resize', updateViewport)
+    window.addEventListener('orientationchange', updateViewport)
+
+    return () => {
+      if (vv) {
+        vv.removeEventListener('resize', updateViewport)
+        vv.removeEventListener('scroll', updateViewport)
+      }
+      window.removeEventListener('resize', updateViewport)
+      window.removeEventListener('orientationchange', updateViewport)
+    }
+  }, [isOpen])
+
+  const handleMessagesScroll = () => {
+    const el = messagesContainerRef.current
+    if (!el) return
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isUserNearBottomRef.current = distanceToBottom <= 120
+  }
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     const el = messagesContainerRef.current
     if (el) {
-      el.scrollTop = el.scrollHeight
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior,
+      })
     }
-  }, [messages, activeConversation])
+  }
 
+  // Messenger-like smart scroll: smooth down on new message if already reading bottom, but don't kick user if scrolling up
   useEffect(() => {
-    if (activeConversation && isOpen) {
+    const el = messagesContainerRef.current
+    if (!el || !activeConversation) return
+
+    const isDifferentConv = activeConversation.id !== activeConversationIdRef.current
+    activeConversationIdRef.current = activeConversation.id
+
+    if (isDifferentConv) {
+      prevMessagesCountRef.current = messages.length
+      isUserNearBottomRef.current = true
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+        }
+      })
+      return
+    }
+
+    const hasNewMessage = messages.length > prevMessagesCountRef.current
+    prevMessagesCountRef.current = messages.length
+
+    if (hasNewMessage) {
+      const lastMsg = messages[messages.length - 1]
+      const isMine = lastMsg?.user_id === session.user.id
+      if (isMine || isUserNearBottomRef.current) {
+        scrollToBottom('smooth')
+      }
+    }
+  }, [messages, activeConversation, session.user.id])
+
+  // Only auto-focus on desktop; on mobile let user tap when ready to avoid sudden keyboard popups
+  useEffect(() => {
+    if (activeConversation && isOpen && window.innerWidth >= 768) {
       const timer = setTimeout(() => {
         inputRef.current?.focus()
       }, 120)
       return () => clearTimeout(timer)
     }
   }, [activeConversation, isOpen])
+
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      scrollToBottom('smooth')
+    }, 150)
+    setTimeout(() => {
+      scrollToBottom('smooth')
+    }, 350)
+  }
 
   useEffect(() => {
     const handleOpenMessenger = (e: Event) => {
@@ -131,6 +242,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     setMessageDraft('')
     try {
       await sendMessage(content)
+      setTimeout(() => scrollToBottom('smooth'), 50)
     } catch (_err) {
       setMessageDraft(content)
     }
@@ -138,7 +250,10 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
 
   const handleQuickPrompt = (promptText: string) => {
     setMessageDraft(promptText)
-    inputRef.current?.focus()
+    setTimeout(() => {
+      inputRef.current?.focus()
+      scrollToBottom('smooth')
+    }, 50)
   }
 
   const handleSelectConversation = (conv: ConversationThreadInfo) => {
@@ -201,6 +316,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
           overflow: hidden;
           font-family: 'Poppins', 'DM Sans', 'Inter', sans-serif;
           padding-top: env(safe-area-inset-top, 0px);
+          -webkit-font-smoothing: antialiased;
         }
         @media (min-width: 768px) {
           .colcampus-messenger {
@@ -229,7 +345,34 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
             box-shadow: none;
           }
         }
-        .colcampus-stories-row { display: flex; gap: 16px; overflow-x: auto; padding: 0 16px 16px; scrollbar-width: none; }
+        .colcampus-smooth-scroll {
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          overscroll-behavior-y: contain !important;
+          overscroll-behavior-x: none !important;
+          touch-action: pan-y !important;
+          scroll-behavior: smooth;
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+          will-change: scroll-position;
+        }
+        .colcampus-smooth-scroll::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+        .colcampus-stories-row {
+          display: flex;
+          gap: 16px;
+          overflow-x: auto;
+          padding: 0 16px 16px;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior-x: contain;
+          touch-action: pan-x;
+        }
         .colcampus-stories-row::-webkit-scrollbar { display: none; }
         .colcampus-story-item { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 56px; flex-shrink: 0; cursor: pointer; }
         .colcampus-story-avatar-wrap { width: 56px; height: 56px; position: relative; border-radius: 50%; padding: 2px; background: #e5e7eb; }
@@ -238,7 +381,19 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
         .colcampus-story-name { font-size: 11px; font-weight: 500; color: #475569; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .colcampus-msg-fab { position: absolute; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: #a4c639; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(138, 173, 42, 0.4); cursor: pointer; border: none; transition: transform 0.2s; }
         .colcampus-msg-fab:hover { transform: scale(1.05); }
-        .fb-item { display: flex; align-items: center; gap: 14px; padding: 10px 16px; cursor: pointer; background: transparent; border: none; width: 100%; text-align: left; transition: background 0.2s; }
+        .fb-item {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 10px 16px;
+          cursor: pointer;
+          background: transparent;
+          border: none;
+          width: 100%;
+          text-align: left;
+          transition: background 0.2s;
+          -webkit-tap-highlight-color: transparent;
+        }
         .fb-item:hover { background: #f9fafb; }
         .fb-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 1px solid #f1f5f9; }
         .fb-avatar-fallback { width: 60px; height: 60px; border-radius: 50%; background: #f7fbe9; color: #6f8d21; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
@@ -286,7 +441,20 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
         .colcampus-prompt-chip { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 500; color: #1E293B; text-align: left; cursor: pointer; transition: all 0.15s ease; display: block; width: 100%; }
         .colcampus-prompt-chip:hover { background: #f7fbe9; border-color: #e6f0c2; color: #6f8d21; transform: translateX(2px); }
       `}</style>
-      <div ref={popoverRef} className="colcampus-messenger shadow-2xl animate-in fade-in zoom-in duration-200">
+      <div
+        ref={popoverRef}
+        className="colcampus-messenger shadow-2xl animate-in fade-in zoom-in duration-200"
+        style={
+          mobileViewport
+            ? {
+                height: `${mobileViewport.height}px`,
+                maxHeight: `${mobileViewport.height}px`,
+                top: `${mobileViewport.top}px`,
+                bottom: 'auto',
+              }
+            : undefined
+        }
+      >
         {!activeConversation ? (
           <>
             <div className="fb-header" style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -329,7 +497,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                   placeholder="Rechercher..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  style={{ width: '100%', height: 40, borderRadius: 20, background: '#f1f5f9', border: 'none', padding: '0 16px 0 42px', fontSize: '14px', outline: 'none' }}
+                  style={{ width: '100%', height: 40, borderRadius: 20, background: '#f1f5f9', border: 'none', padding: '0 16px 0 42px', fontSize: '16px', outline: 'none' }}
                 />
               </div>
             </div>
@@ -364,7 +532,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
               </div>
             )}
 
-            <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80, overscrollBehavior: 'contain' }}>
+            <div className="colcampus-smooth-scroll" style={{ flex: 1, paddingBottom: 80 }}>
               {loadingInitial ? (
                 <div style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>Chargement...</div>
               ) : filteredDiscussions.length === 0 ? (
@@ -528,7 +696,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                 </span>
               </div>
 
-              <div ref={messagesContainerRef} style={styles.messagesList}>
+              <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="colcampus-smooth-scroll" style={styles.messagesList}>
                 {loadingMessages && messages.length === 0 ? (
                   <div style={styles.empty}>
                     <span style={{ display: 'inline-block', width: 22, height: 22, border: '2px solid #CBD5E1', borderTopColor: '#a4c639', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: 8 }} />
@@ -595,7 +763,9 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                   placeholder={`Écrivez à ${partnerName}...`}
                   value={messageDraft}
                   onChange={e => setMessageDraft(e.target.value)}
+                  onFocus={handleInputFocus}
                   style={styles.chatInput}
+                  autoComplete="off"
                 />
                 <button type="submit" disabled={!messageDraft.trim() || sending} style={{ ...styles.sendBtn, opacity: !messageDraft.trim() || sending ? 0.45 : 1, cursor: !messageDraft.trim() || sending ? 'not-allowed' : 'pointer' }} title="Envoyer le message" aria-label="Envoyer">
                   {sending ? (
@@ -668,15 +838,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   messagesList: {
     flex: 1,
-    overflowY: 'auto',
     padding: '20px',
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
     backgroundColor: '#f8fafc',
-    scrollbarWidth: 'none',
-    overscrollBehavior: 'contain',
-    WebkitOverflowScrolling: 'touch',
   } as React.CSSProperties,
   messageRow: {
     display: 'flex',
@@ -689,6 +855,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     lineHeight: '1.5',
     boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+    whiteSpace: 'pre-wrap',
   },
   inputWrapper: {
     padding: '16px 20px',
@@ -699,6 +868,7 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#fff',
     alignItems: 'center',
     flexShrink: 0,
+    zIndex: 10,
   },
   chatInput: {
     flex: 1,
@@ -707,10 +877,11 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     borderRadius: '16px',
     padding: '0 18px',
-    fontSize: '14px',
-    fontWeight: 600,
+    fontSize: '16px',
+    fontWeight: 500,
     outline: 'none',
     color: '#0f172a',
+    WebkitAppearance: 'none',
   },
   sendBtn: {
     width: '48px',
