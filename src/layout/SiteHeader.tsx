@@ -483,12 +483,16 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
             <a className="navbar-brand" href="#/" onClick={closeMenu}>
               <div className="header-brand-wrap">
                 <img
-                  src="/assets/images/logo_colcampus_icon.png"
+                  src={
+                    hasBackground || (!isDarkHeroPage && !isMenuOpen)
+                      ? '/assets/images/logo_colcampus_icon_dark.png'
+                      : '/assets/images/logo_colcampus_icon.png'
+                  }
                   alt="ColCampus"
                   className="header-brand-logo"
                 />
                 <h2>
-                  Col <em>Campus</em>
+                  ol<em>Campus</em>
                 </h2>
                 <span className="header-brand-badge d-none d-xl-inline-block">
                   5 Villes • Bénin

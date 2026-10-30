@@ -486,13 +486,26 @@ header .navbar {
   font-size: 24px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
+  gap: 2px !important;
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 800 !important;
+  text-transform: none !important;
+  letter-spacing: -0.5px !important;
+}
+
+.navbar .navbar-brand h2 em {
+  font-style: normal !important;
+  font-size: inherit !important;
+  color: #00c162 !important;
 }
 
 .background-header .navbar-brand h2 {
-  color: #a4c639 !important;
+  color: #0f172a !important;
+}
+
+.background-header .navbar-brand h2 em {
+  color: #00a854 !important;
+  font-style: normal !important;
 }
 
 /* On pages with a light/white background (ex: Boutiques, Marketplace, Annonce Detail, etc.) */
@@ -509,8 +522,8 @@ header.header-solid-page .navbar-brand h2 {
 }
 
 header.header-solid-page .navbar-brand h2 em {
-  color: #a4c639 !important;
-  font-style: normal;
+  color: #00a854 !important;
+  font-style: normal !important;
 }
 
 header.header-solid-page .header-brand-badge {
@@ -585,7 +598,7 @@ header.header-solid-page .header-user-name {
 .header-brand-wrap {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 3px;
 }
 
 .header-brand-logo {
@@ -601,7 +614,7 @@ header.header-solid-page .header-user-name {
     height: 30px;
   }
   .header-brand-wrap {
-    gap: 8px;
+    gap: 3px;
   }
 }
 
