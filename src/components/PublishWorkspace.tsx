@@ -32,6 +32,7 @@ import { formatPrice, formatRoomType } from '../utils/format'
 import { PageForfaits, isKkiapayReady, requestKkiapayPayment } from './PageForfaits'
 import { WidgetPortefeuille } from './WidgetPortefeuille'
 import type { ToastDraft } from './ToastViewport'
+import { compressImage, compressImages } from '../utils/imageCompressor'
 
 interface PublishWorkspaceProps {
   session: AuthSession
@@ -258,10 +259,11 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
 
   /* ─── Médias ──────────────────────────────────────── */
 
-  function handleFilesSelected(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFilesSelected(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files
     if (!files?.length) return
-    setA({ medias: [...(announcementForm.medias ?? []), ...Array.from(files)] })
+    const compressed = await compressImages(Array.from(files))
+    setA({ medias: [...(announcementForm.medias ?? []), ...compressed] })
   }
 
   function removeFile(indexToRemove: number) {
@@ -890,13 +892,17 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
                   <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)' }}>
                     Sélectionnez une bannière
                   </span>
-                  <span style={{ fontSize: '0.78rem' }}>JPG, PNG ou WEBP — 4 Mo maximum</span>
+                  <span style={{ fontSize: '0.78rem' }}>JPG, PNG ou WEBP</span>
                   <input
                     id={bannerInputId}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     style={{ display: 'none' }}
-                    onChange={(event) => setP({ banniere: event.target.files?.[0] ?? null })}
+                    onChange={async (event) => {
+                      const raw = event.target.files?.[0] ?? null
+                      const file = raw ? await compressImage(raw) : null
+                      setP({ banniere: file })
+                    }}
                   />
                 </label>
               </label>

@@ -11,6 +11,7 @@ import { registerUser } from '../services/api'
 import type { RegisterPayload, UserRole } from '../types'
 import type { ToastDraft } from './ToastViewport'
 import { UiIcon } from './UiIcons'
+import { compressImage } from '../utils/imageCompressor'
 
 type RegisterStep = 1 | 2
 
@@ -118,17 +119,27 @@ export function RegisterFlow({
     setForm((current) => ({ ...current, [name]: value }))
   }
 
-  function onFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0] ?? null
+  async function onFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const rawFile = event.target.files?.[0] ?? null
     const { name } = event.target
 
-    if (name === 'photo_profil' && file) {
+    if (!rawFile) {
+      setForm((current) => ({
+        ...current,
+        [name]: name === 'photo_profil' ? new File([], '') : null,
+      }))
+      return
+    }
+
+    const file = await compressImage(rawFile)
+
+    if (name === 'photo_profil') {
       setPhotoPreview(URL.createObjectURL(file))
     }
 
     setForm((current) => ({
       ...current,
-      [name]: name === 'photo_profil' ? (file ?? new File([], '')) : file,
+      [name]: file,
     }))
   }
 

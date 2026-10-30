@@ -16,6 +16,7 @@ import { API_BASE_URL, updateCurrentUser, uploadKycDocuments } from '../services
 import type { AuthSession, KycDocument, KycDocumentDraft, UpdateProfilePayload, VerificationStatus } from '../types'
 import { getDashboardPath, getRoleLabel } from '../utils/auth'
 import type { ToastDraft } from './ToastViewport'
+import { compressImage } from '../utils/imageCompressor'
 
 interface ProfileWorkspaceProps {
   session: AuthSession
@@ -274,22 +275,16 @@ function InfosTab({
     update(event.target.name, event.target.value)
   }
 
-  function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) {
+  async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const rawFile = event.target.files?.[0]
+    if (!rawFile) {
       setPhotoFile(null)
       setPreviewImage(null)
       setSaved(false)
       return
     }
 
-    const allowed = ['image/jpeg', 'image/png', 'image/webp']
-    if (!allowed.includes(file.type)) {
-      onToast({ tone: 'error', title: 'Format invalide', message: 'Sélectionnez une image (JPG, PNG ou WEBP).' })
-      event.target.value = ''
-      return
-    }
-
+    const file = await compressImage(rawFile)
     setPhotoFile(file)
     setPreviewImage(URL.createObjectURL(file))
     setSaved(false)
@@ -406,7 +401,7 @@ function InfosTab({
               {photoFile ? photoFile.name : 'Choisir une image'}
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhoto} style={{ display: 'none' }} />
             </label>
-            <span style={{ color: 'var(--muted)', fontSize: '0.78rem' }}>JPG, PNG ou WEBP — max 4 Mo</span>
+            <span style={{ color: 'var(--muted)', fontSize: '0.78rem' }}>JPG, PNG ou WEBP</span>
           </div>
         </div>
 
