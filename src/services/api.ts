@@ -495,12 +495,23 @@ export async function sendConversationMessage(
   }
 
   const formData = new FormData()
-  if (payload.message) {
-    formData.append('message', payload.message)
+  if (payload.message && payload.message.trim()) {
+    formData.append('message', payload.message.trim())
+  } else if (payload.audio) {
+    formData.append('message', 'Message vocal')
   }
+
   if (payload.audio) {
-    const isM4a = payload.audio.type?.includes('mp4') || payload.audio.type?.includes('aac')
-    formData.append('audio', payload.audio, `vocal_${Date.now()}.${isM4a ? 'm4a' : 'webm'}`)
+    const type = (payload.audio.type || '').toLowerCase()
+    let ext = 'webm'
+    if (type.includes('mp4') || type.includes('m4a') || type.includes('aac')) {
+      ext = 'm4a'
+    } else if (type.includes('ogg')) {
+      ext = 'ogg'
+    } else if (type.includes('wav')) {
+      ext = 'wav'
+    }
+    formData.append('audio', payload.audio, `vocal_${Date.now()}.${ext}`)
   }
   if (payload.duration != null) {
     formData.append('duration', String(Math.round(payload.duration)))

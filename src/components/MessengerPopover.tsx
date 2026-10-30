@@ -97,6 +97,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
 
   const [messageDraft, setMessageDraft] = useState('')
   const [isRecordingAudio, setIsRecordingAudio] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isUserNearBottomRef = useRef(true)
@@ -243,21 +244,29 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     if (!messageDraft.trim() || sending) return
     const content = messageDraft.trim()
     setMessageDraft('')
+    setSendError(null)
     try {
       await sendMessage(content)
       setTimeout(() => scrollToBottom('smooth'), 50)
-    } catch (_err) {
+    } catch (err: any) {
       setMessageDraft(content)
+      const msg = err?.payload?.message || err?.message || "Impossible d'envoyer le message."
+      setSendError(msg)
+      setTimeout(() => setSendError(null), 6000)
     }
   }
 
   const handleSendAudio = async (audioBlob: Blob, duration: number) => {
     setIsRecordingAudio(false)
+    setSendError(null)
     try {
       await sendMessage({ audio: audioBlob, duration })
       setTimeout(() => scrollToBottom('smooth'), 50)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Échec d'envoi du message vocal:", err)
+      const msg = err?.payload?.message || err?.message || "Impossible d'envoyer le message vocal."
+      setSendError(msg)
+      setTimeout(() => setSendError(null), 6000)
     }
   }
 
@@ -285,6 +294,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
 
   useEffect(() => {
     setIsRecordingAudio(false)
+    setSendError(null)
   }, [activeConversation?.id])
 
   const filteredDiscussions = discussions.filter(d => {
@@ -784,6 +794,35 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                   })
                 )}
               </div>
+
+              {sendError && (
+                <div
+                  style={{
+                    background: '#FEF2F2',
+                    borderTop: '1px solid #FEE2E2',
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    fontSize: 12.5,
+                    color: '#DC2626',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <UiIcon name="alert" />
+                    <span>{sendError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSendError(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: 2, display: 'flex' }}
+                    aria-label="Fermer"
+                  >
+                    <UiIcon name="close" />
+                  </button>
+                </div>
+              )}
 
               <div style={styles.inputWrapper}>
                 {isRecordingAudio ? (
