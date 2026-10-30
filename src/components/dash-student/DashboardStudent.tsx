@@ -276,8 +276,35 @@ export const DashboardStudent: React.FC<DashboardStudentProps> = ({
 
         case 'verification':
             return (
-                <div className="max-w-2xl animate-in fade-in duration-300">
+                <div className="max-w-2xl space-y-5 animate-in fade-in duration-300">
                     <VerificationMini verification={dashboard?.verification ?? {}} />
+                    {session.user.statut_verification !== 'valide' ? (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-xs">
+                            <div className="flex items-center gap-2.5 text-amber-900 font-bold text-sm">
+                                <UiIcon name="shield" className="w-5 h-5 text-amber-600" />
+                                <span>Pourquoi certifier votre compte ?</span>
+                            </div>
+                            <p className="mt-2 text-xs leading-relaxed text-amber-800">
+                                La certification permet de vérifier votre statut étudiant afin de sécuriser les échanges avec les bailleurs et colocataires. Sans validation, vous ne pouvez pas accéder aux coordonnées directes ni contacter les annonceurs.
+                            </p>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                                <a
+                                    href="#/dashboard/etudiant?tab=preferences"
+                                    className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-amber-700"
+                                >
+                                    <UiIcon name="upload" className="w-4 h-4" />
+                                    Déposer ma carte d'étudiant ou CIP
+                                </a>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5 text-xs text-emerald-800 flex items-center gap-3">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white shrink-0">
+                                <UiIcon name="check" className="w-4 h-4" />
+                            </span>
+                            <span>Votre compte est certifié. Vous pouvez contacter librement tous les annonceurs et publier vos annonces.</span>
+                        </div>
+                    )}
                 </div>
             );
 

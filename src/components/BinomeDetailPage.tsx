@@ -11,6 +11,8 @@ import {
   ChevronRight,
   Home,
   Wallet,
+  Shield,
+  Upload,
 } from 'lucide-react'
 import type { Annonce, AuthSession } from '../types'
 import { addFavorite, removeFavorite, fetchAnnouncementConversation } from '../services/api'
@@ -52,6 +54,7 @@ export function BinomeDetailPage({
   const [isSavingFavorite, setIsSavingFavorite] = useState(false)
   const [isFavorited, setIsFavorited] = useState<boolean>(Boolean(announcement.est_favori))
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false)
+  const [isKycPromptOpen, setIsKycPromptOpen] = useState(false)
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isOpeningChat, setIsOpeningChat] = useState(false)
@@ -63,6 +66,7 @@ export function BinomeDetailPage({
   const hasPhone = Boolean(announcement.user.telephone)
   const isOwnAnnouncement = Boolean(session && announcement.user.id && session.user.id === announcement.user.id)
   const canContact = Boolean(hasUnlockedVerifiedAccess(session) && hasPhone && !isOwnAnnouncement)
+  const isUnverifiedUser = Boolean(session && !hasUnlockedVerifiedAccess(session) && !isOwnAnnouncement)
 
   const user = announcement.user
   const profil = user.profil
@@ -248,10 +252,19 @@ export function BinomeDetailPage({
                   <button
                     type="button"
                     onClick={() => setIsContactModalOpen(true)}
-                    className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
                   >
                     <MessageCircle className="w-4 h-4" />
                     <span>Contacter l'étudiant</span>
+                  </button>
+                ) : isUnverifiedUser && hasPhone ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsKycPromptOpen(true)}
+                    className="w-full py-3.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-xs"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span>Certifier mon compte pour contacter</span>
                   </button>
                 ) : !session && hasPhone ? (
                   <button
@@ -279,6 +292,32 @@ export function BinomeDetailPage({
                     <Lock className="w-4 h-4" />
                     <span>Contact non disponible</span>
                   </button>
+                )}
+
+                {/* Banner clarification pour étudiant non certifié */}
+                {isUnverifiedUser && (
+                  <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-left mt-1">
+                    <div className="flex items-center gap-2 text-amber-900 font-bold text-xs mb-1">
+                      <Shield className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Certification requise</span>
+                    </div>
+                    <p className="text-xs text-amber-800 leading-relaxed mb-3">
+                      {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
+                        ? 'Vos pièces sont en cours de vérification par notre équipe. Dès validation, vous pourrez échanger avec ce binôme.'
+                        : 'Pour votre sécurité et celle des colocataires, vous devez certifier votre statut d’étudiant avec votre carte ou CIP.'}
+                    </p>
+                    <a
+                      href="#/dashboard?tab=preferences"
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>
+                        {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
+                          ? 'Vérifier mon statut'
+                          : 'Déposer ma carte d\'étudiant / CIP'}
+                      </span>
+                    </a>
+                  </div>
                 )}
 
                 {/* Invite de connexion si non connecté */}
@@ -361,6 +400,65 @@ export function BinomeDetailPage({
 
         </div>
       </main>
+
+      {/* ── Modal d'explication de certification obligatoire ── */}
+      {isKycPromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div
+            className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden text-left"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="p-6 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-base">
+                  <Shield className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <div className="text-[10.5px] font-bold uppercase tracking-wider text-amber-700">Sécurité ColCampus</div>
+                  <h3 className="font-bold text-slate-900 text-base">Certification requise</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsKycPromptOpen(false)}
+                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Pour assurer la sécurité entre étudiants et garantir la transparence des recherches de colocation, vous devez certifier votre compte avant d’accéder au numéro et au chat.
+              </p>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed">
+                <strong className="block font-semibold text-slate-900 mb-1">Pièces acceptées :</strong>
+                Déposez simplement votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong> depuis votre espace profil. Notre modération valide les pièces rapidement.
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <a
+                  href="#/dashboard?tab=preferences"
+                  onClick={() => setIsKycPromptOpen(false)}
+                  className="flex-1 py-2.5 px-4 text-center rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition flex items-center justify-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Déposer ma pièce</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setIsKycPromptOpen(false)}
+                  className="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium transition"
+                >
+                  Plus tard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal de Contact (WhatsApp & Chat) ── */}
       {isContactModalOpen && canContact && (

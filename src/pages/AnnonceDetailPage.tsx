@@ -106,6 +106,7 @@ export function AnnonceDetailPage({
     }
   }, [announcement])
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  const [isKycPromptOpen, setIsKycPromptOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isOpeningChat, setIsOpeningChat] = useState(false)
   const [isStudentProfileOpen, setIsStudentProfileOpen] = useState(false)
@@ -114,6 +115,7 @@ export function AnnonceDetailPage({
   const hasPhone = Boolean(announcement?.user.telephone)
   const isOwnAnnouncement = Boolean(session && announcement?.user.id && session.user.id === announcement.user.id)
   const canContact = Boolean(hasUnlockedVerifiedAccess(session) && hasPhone && !isOwnAnnouncement)
+  const isUnverifiedUser = Boolean(session && !hasUnlockedVerifiedAccess(session) && !isOwnAnnouncement)
 
 
 
@@ -644,9 +646,26 @@ export function AnnonceDetailPage({
                     <button style={S.btnPrimary} onClick={() => setIsContactModalOpen(true)}>
                       <UiIcon name="message-circle" /> Contacter l'annonceur
                     </button>
+                  ) : isUnverifiedUser && hasPhone ? (
+                    <button
+                      style={{
+                        ...S.btnPrimary,
+                        background: '#D97706',
+                        borderColor: '#B45309',
+                        color: '#FFFFFF',
+                        boxShadow: '0 4px 14px rgba(217, 119, 6, 0.28)',
+                      }}
+                      onClick={() => setIsKycPromptOpen(true)}
+                    >
+                      <UiIcon name="shield" /> Certifier mon compte pour contacter
+                    </button>
                   ) : !session && hasPhone ? (
                     <button style={S.btnPrimary} onClick={() => setIsLoginPromptOpen(true)}>
                       <UiIcon name="lock" /> Débloquer le contact
+                    </button>
+                  ) : isOwnAnnouncement ? (
+                    <button style={{ ...S.btnPrimary, opacity: .45, cursor: 'not-allowed' }} disabled>
+                      Votre propre annonce
                     </button>
                   ) : (
                     <button style={{ ...S.btnPrimary, opacity: .45, cursor: 'not-allowed' }} disabled>
@@ -654,6 +673,53 @@ export function AnnonceDetailPage({
                     </button>
                   )}
                 </div>
+
+                {/* Banner clarification pour étudiant non certifié */}
+                {isUnverifiedUser && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      background: '#FFFBEB',
+                      border: '1.5px solid #FCD34D',
+                      boxShadow: '0 2px 8px rgba(245, 158, 11, 0.08)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#B45309', fontWeight: 700, fontSize: 13 }}>
+                      <UiIcon name="shield" />
+                      <span>Certification requise</span>
+                    </div>
+                    <p style={{ margin: '6px 0 10px', fontSize: 12, color: '#92400E', lineHeight: 1.45 }}>
+                      {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
+                        ? 'Vos pièces d’identité sont actuellement en cours de validation par notre modération. Dès confirmation, vous pourrez échanger avec cet annonceur.'
+                        : 'Pour votre sécurité et celle des bailleurs, vous devez certifier votre compte avec votre carte d’étudiant ou CIP avant de pouvoir envoyer un message.'}
+                    </p>
+                    <a
+                      href="#/dashboard?tab=preferences"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        background: '#D97706',
+                        color: '#FFFFFF',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      <UiIcon name="upload" />
+                      {session?.user.statut_verification === 'en_attente' || session?.user.statut_verification === 'pending_validation'
+                        ? 'Vérifier l’état de mes pièces'
+                        : 'Déposer ma carte d’étudiant / CIP'}
+                    </a>
+                  </div>
+                )}
 
                 {/* Login prompt inline */}
                 {!session && hasPhone && isLoginPromptOpen && (
@@ -699,7 +765,7 @@ export function AnnonceDetailPage({
                       ? 'Choisissez WhatsApp ou le chat interne sans quitter cette fiche.'
                       : isOwnAnnouncement
                         ? 'Vous ne pouvez pas contacter votre propre annonce.'
-                        : 'Un document d\'identité validé est requis pour débloquer le contact.'
+                        : 'Votre carte d\'étudiant ou CIP validée est requise pour débloquer les échanges.'
                     : hasPhone
                       ? 'Connexion nécessaire pour accéder aux coordonnées.'
                       : 'Contact direct non disponible pour cette annonce.'}
@@ -771,9 +837,29 @@ export function AnnonceDetailPage({
             <button style={{ ...S.btnPrimary, width: 'auto', flex: 1, minWidth: 0 }} onClick={() => setIsContactModalOpen(true)}>
               <UiIcon name="message-circle" /> Contacter
             </button>
+          ) : isUnverifiedUser && hasPhone ? (
+            <button
+              style={{
+                ...S.btnPrimary,
+                width: 'auto',
+                flex: 1.3,
+                minWidth: 0,
+                background: '#D97706',
+                borderColor: '#B45309',
+                fontSize: 12,
+                padding: '9px 10px',
+              }}
+              onClick={() => setIsKycPromptOpen(true)}
+            >
+              <UiIcon name="shield" /> Certifier mon compte
+            </button>
           ) : !session && hasPhone ? (
             <button style={{ ...S.btnPrimary, width: 'auto', flex: 1, minWidth: 0 }} onClick={() => setIsLoginPromptOpen(true)}>
               <UiIcon name="lock" /> Se connecter
+            </button>
+          ) : isOwnAnnouncement ? (
+            <button style={{ ...S.btnPrimary, width: 'auto', flex: 1, minWidth: 0, opacity: .45 }} disabled>
+              Votre annonce
             </button>
           ) : (
             <button style={{ ...S.btnPrimary, width: 'auto', flex: 1, minWidth: 0, opacity: .4 }} disabled>
@@ -881,6 +967,75 @@ export function AnnonceDetailPage({
         </div>
       )}
 
+      {/* ── Modal d'explication de certification obligatoire ── */}
+      {isKycPromptOpen && (
+        <div style={M.overlay}>
+          <div style={{ ...M.modal, maxWidth: 480 }} role="dialog" aria-modal="true" aria-label="Certification de compte requise">
+            <div style={{ ...M.header, background: '#FFFBEB', borderBottom: '1px solid #FDE68A', padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+                  <UiIcon name="shield" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#B45309' }}>
+                    Sécurité des échanges ColCampus
+                  </div>
+                  <h3 style={{ margin: '2px 0 0', fontSize: 16.5, fontWeight: 800, color: '#78350F' }}>
+                    Certification requise
+                  </h3>
+                </div>
+              </div>
+              <button style={M.closeBtn} onClick={() => setIsKycPromptOpen(false)} aria-label="Fermer">
+                <UiIcon name="x" />
+              </button>
+            </div>
+
+            <div style={{ padding: '22px 24px' }}>
+              <p style={{ margin: '0 0 14px', fontSize: 13.5, color: '#334155', lineHeight: 1.6 }}>
+                Pour garantir la sécurité de la communauté et empêcher les faux démarcheurs ou les arnaques, l’accès aux contacts directs (WhatsApp et messagerie sécurisée) nécessite la validation de votre identité.
+              </p>
+
+              <div style={{ padding: '14px 16px', borderRadius: 14, background: '#F8FAFC', border: '1px solid #E2E8F0', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: '#0F172A', marginBottom: 5 }}>
+                  <UiIcon name="document" />
+                  <span>Comment certifier mon compte ?</span>
+                </div>
+                <p style={{ margin: 0, fontSize: 12.5, color: '#64748B', lineHeight: 1.55 }}>
+                  Il vous suffit de déposer votre <strong>carte d'étudiant</strong> ou votre <strong>CIP</strong> depuis votre profil. La modération traite les demandes rapidement pour vous donner un accès direct et illimité.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <a
+                  href="#/dashboard?tab=preferences"
+                  onClick={() => setIsKycPromptOpen(false)}
+                  style={{
+                    ...S.btnPrimary,
+                    flex: 1.4,
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    background: '#D97706',
+                    borderColor: '#B45309',
+                    color: '#FFFFFF',
+                    padding: '11px 16px',
+                  }}
+                >
+                  Déposer ma pièce d'identité
+                </a>
+                <button
+                  style={{ ...S.btnGhost, flex: 1, fontSize: 13 }}
+                  onClick={() => setIsKycPromptOpen(false)}
+                >
+                  Plus tard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Modal de profil de l'annonceur ── */}
       {canViewAuthorProfile && (
         <AuthorProfileModal
@@ -889,9 +1044,15 @@ export function AnnonceDetailPage({
           onClose={() => setIsStudentProfileOpen(false)}
           onContact={() => {
             setIsStudentProfileOpen(false)
-            setIsContactModalOpen(true)
+            if (canContact) {
+              setIsContactModalOpen(true)
+            } else if (isUnverifiedUser) {
+              setIsKycPromptOpen(true)
+            } else if (!session) {
+              setIsLoginPromptOpen(true)
+            }
           }}
-          canContact={canContact}
+          canContact={canContact || isUnverifiedUser}
         />
       )}
 

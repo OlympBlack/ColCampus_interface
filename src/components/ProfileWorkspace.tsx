@@ -116,7 +116,7 @@ export function ProfileWorkspace({ session, onSessionChange, onToast }: ProfileW
           </div>
         )}
 
-        <nav className="d-flex flex-column gap-2 w-100 mt-2" aria-label="Sections du profil">
+        <nav className="profile-tabs-nav d-flex flex-column gap-2 w-100 mt-2" aria-label="Sections du profil">
           {TABS.map(({ id, label, Icon }) => (
             <button
               key={id}
