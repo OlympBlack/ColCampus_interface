@@ -8,24 +8,94 @@ import { showWebPushNotification } from '../utils/webPush'
 export function useMessengerUnread(session: AuthSession | null) {
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const unreadConvIdsRef = useRef<Set<number>>(new Set())
+  const lastKnownMessageIdByConvRef = useRef<Map<number, number>>(new Map())
+  const initialScanDoneRef = useRef(false)
+
   const sessionToken = session?.token
   const userId = session?.user?.id
+
+  // Déclenchement de la notification push pour un nouveau message
+  const notifyIncomingMessage = useCallback(
+    (conv: any, message: ConversationMessage) => {
+      // Ignorer ses propres messages
+      if (!message || message.user_id === userId) return
+
+      // 1. Jouer le carillon magique "cloohummmm"
+      playMagicChime()
+
+      // 2. Déclencher la notification Push en haut de l'écran Android
+      const partner =
+        conv.sender_id === userId ? conv.receiver : conv.sender
+      const partnerName =
+        partner?.prenoms || partner?.name || 'Nouveau message'
+      const isAudio =
+        message.type === 'audio' || Boolean(message.media_url)
+      const preview = isAudio
+        ? '🎤 Nouveau message vocal'
+        : message.content || 'Vous a envoyé un message'
+
+      showWebPushNotification({
+        title: `${partnerName} sur ColCampus`,
+        body: preview,
+        icon: partner?.photo_profil || '/assets/images/logo_colcampus_icon.png',
+        tag: conv.id ? `colcampus-conv-${conv.id}` : 'colcampus-chat',
+        onClick: () => {
+          window.dispatchEvent(new CustomEvent('open-messenger'))
+          window.dispatchEvent(
+            new CustomEvent('colcampus:open-chat', {
+              detail: { conversationId: conv.id },
+            })
+          )
+        },
+      })
+    },
+    [userId]
+  )
 
   const refreshUnreadCount = useCallback(async () => {
     if (!sessionToken) {
       unreadConvIdsRef.current.clear()
+      lastKnownMessageIdByConvRef.current.clear()
+      initialScanDoneRef.current = false
       setUnreadCount(0)
       return
     }
+
     try {
       const res = await fetchDashboard(sessionToken)
-      if (Array.isArray(res.data?.mes_conversations)) {
-        const unreadConvs = res.data.mes_conversations.filter(
+      const conversations = res.data?.mes_conversations
+
+      if (Array.isArray(conversations)) {
+        // 1. Calcul du compteur de conversations non lues
+        const unreadConvs = conversations.filter(
           (d) => (d.conversation.unread_count ?? 0) > 0
         )
         const newSet = new Set<number>(unreadConvs.map((d) => d.conversation.id))
         unreadConvIdsRef.current = newSet
         setUnreadCount(newSet.size)
+
+        // 2. Détection en temps réel des NOUVEAUX messages réels
+        conversations.forEach((d) => {
+          const conv = d.conversation
+          const lastMsg = d.last_message as ConversationMessage | null
+
+          if (!conv || !lastMsg || !lastMsg.id) return
+
+          const prevLastId = lastKnownMessageIdByConvRef.current.get(conv.id)
+
+          // Si le scan initial est déjà passé et qu'un nouveau message arrive
+          if (initialScanDoneRef.current) {
+            if (prevLastId === undefined || lastMsg.id > prevLastId) {
+              lastKnownMessageIdByConvRef.current.set(conv.id, lastMsg.id)
+              notifyIncomingMessage(conv, lastMsg)
+            }
+          } else {
+            // Premier scan : on mémorise simplement l'ID actuel pour ne pas notifier les anciens messages
+            lastKnownMessageIdByConvRef.current.set(conv.id, lastMsg.id)
+          }
+        })
+
+        initialScanDoneRef.current = true
       } else if (typeof res.data?.unread_messages_count === 'number') {
         setUnreadCount(res.data.unread_messages_count)
       } else {
@@ -34,7 +104,7 @@ export function useMessengerUnread(session: AuthSession | null) {
     } catch {
       // silent fallback
     }
-  }, [sessionToken])
+  }, [sessionToken, notifyIncomingMessage])
 
   // Initial fetch on session change
   useEffect(() => {
@@ -42,46 +112,43 @@ export function useMessengerUnread(session: AuthSession | null) {
       void refreshUnreadCount()
     } else {
       unreadConvIdsRef.current.clear()
+      lastKnownMessageIdByConvRef.current.clear()
+      initialScanDoneRef.current = false
       setUnreadCount(0)
     }
   }, [sessionToken, refreshUnreadCount])
 
-  // Real-time listener for incoming messages and updates
+  // Polling temps réel (toutes les 4 secondes) + écoute WebSocket Reverb si disponible
   useEffect(() => {
     if (!userId || !sessionToken) return
 
+    // 1. Polling périodique toutes les 4s pour garantir la réception instantanée
+    // même lorsque le serveur fonctionne en broadcast log
+    const pollInterval = setInterval(() => {
+      void refreshUnreadCount()
+    }, 4000)
+
+    // 2. Détection immédiate lors du réveil du téléphone ou retour sur l'onglet
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshUnreadCount()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // 3. Écoute Echo WebSocket au cas où Reverb est actif
     const channel = echo.private(`users.${userId}`)
 
-    const handleMessageSent = (data?: { conversation?: any; message?: ConversationMessage }) => {
-      // If message is from another user, increment distinct conversations
-      if (!data?.message || data.message.user_id !== userId) {
-        const convId = data?.conversation?.id
-        if (convId) {
-          if (!unreadConvIdsRef.current.has(convId)) {
-            unreadConvIdsRef.current.add(convId)
-            setUnreadCount(unreadConvIdsRef.current.size)
-          }
-        }
-
-        // Jouer le son magique "cloohummmm"
-        playMagicChime()
-
-        // Déclencher la notification Push système du navigateur
-        const partner = data?.conversation?.sender_id === userId ? data?.conversation?.receiver : data?.conversation?.sender
-        const partnerName = partner?.prenoms || partner?.name || 'Nouveau message'
-        const isAudio = data?.message?.type === 'audio' || Boolean(data?.message?.media_url)
-        const preview = isAudio ? '🎤 Nouveau message vocal' : (data?.message?.content || 'Vous a envoyé un message')
-
-        showWebPushNotification({
-          title: `${partnerName} sur ColCampus`,
-          body: preview,
-          icon: partner?.photo_profil || '/assets/images/logo_colcampus_icon.png',
-          tag: convId ? `colcampus-conv-${convId}` : 'colcampus-chat',
-          onClick: () => {
-            window.dispatchEvent(new CustomEvent('open-messenger'))
-            window.dispatchEvent(new CustomEvent('colcampus:open-chat', { detail: { conversationId: convId } }))
-          },
-        })
+    const handleMessageSent = (data?: {
+      conversation?: any
+      message?: ConversationMessage
+    }) => {
+      if (data?.conversation && data?.message) {
+        lastKnownMessageIdByConvRef.current.set(
+          data.conversation.id,
+          data.message.id
+        )
+        notifyIncomingMessage(data.conversation, data.message)
       }
       void refreshUnreadCount()
     }
@@ -90,44 +157,20 @@ export function useMessengerUnread(session: AuthSession | null) {
       void refreshUnreadCount()
     }
 
-    const handleNotification = (notif: any) => {
-      if (
-        notif?.type === 'annonce_message' ||
-        notif?.data?.type === 'annonce_message' ||
-        notif?.meta?.conversation_id ||
-        notif?.data?.meta?.conversation_id
-      ) {
-        const convId = notif?.meta?.conversation_id ?? notif?.data?.meta?.conversation_id
-        if (convId) {
-          const numId = Number(convId)
-          if (!unreadConvIdsRef.current.has(numId)) {
-            unreadConvIdsRef.current.add(numId)
-            setUnreadCount(unreadConvIdsRef.current.size)
-          }
-        }
-        void refreshUnreadCount()
-      }
-    }
-
     channel.listen('.MessageSent', handleMessageSent)
     channel.listen('MessageSent', handleMessageSent)
     channel.listen('.MessagesRead', handleMessagesRead)
     channel.listen('MessagesRead', handleMessagesRead)
-    channel.notification(handleNotification)
-
-    // Periodic heartbeat sync every 20 seconds
-    const interval = setInterval(() => {
-      void refreshUnreadCount()
-    }, 20000)
 
     return () => {
+      clearInterval(pollInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       channel.stopListening('.MessageSent')
       channel.stopListening('MessageSent')
       channel.stopListening('.MessagesRead')
       channel.stopListening('MessagesRead')
-      clearInterval(interval)
     }
-  }, [userId, sessionToken, refreshUnreadCount])
+  }, [userId, sessionToken, refreshUnreadCount, notifyIncomingMessage])
 
   const decrementUnreadCount = useCallback((convId?: number) => {
     if (convId && unreadConvIdsRef.current.has(convId)) {

@@ -6,6 +6,7 @@ import {
     markConversationAsRead,
 } from '../services/api'
 import { playMagicChime } from '../utils/audioChime'
+import { showWebPushNotification } from '../utils/webPush'
 import type {
     AuthSession,
     ConversationThreadInfo,
@@ -76,7 +77,7 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
         }
     }, [activeConversation?.id, loadMessages])
 
-    // Fallback polling for rock-solid real-time sync
+    // Polling de synchronisation temps réel de la conversation active
     useEffect(() => {
         if (!activeConversation) return
 
@@ -84,7 +85,29 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
             try {
                 const res = await fetchConversationById(session.token, activeConversation.id)
                 setMessages(prev => {
-                    if (res.data.messages.length !== prev.length) {
+                    if (res.data.messages.length > prev.length) {
+                        const newMsg = res.data.messages[res.data.messages.length - 1]
+                        if (newMsg && newMsg.user_id !== session.user.id) {
+                            playMagicChime()
+                            // Si l'utilisateur est sur un autre écran / appli / veille, envoyer la notification push
+                            if (typeof document !== 'undefined' && document.hidden) {
+                                const partner = activeConversation.sender_id === session.user.id ? activeConversation.receiver : activeConversation.sender
+                                const partnerName = partner?.prenoms || partner?.name || 'Nouveau message'
+                                const isAudio = newMsg.type === 'audio' || Boolean(newMsg.media_url)
+                                const preview = isAudio ? '🎤 Nouveau message vocal' : (newMsg.content || 'Vous a envoyé un message')
+
+                                showWebPushNotification({
+                                    title: `${partnerName} sur ColCampus`,
+                                    body: preview,
+                                    icon: partner?.photo_profil || '/assets/images/logo_colcampus_icon.png',
+                                    tag: `colcampus-conv-${activeConversation.id}`,
+                                    onClick: () => {
+                                        window.dispatchEvent(new CustomEvent('open-messenger'))
+                                        window.dispatchEvent(new CustomEvent('colcampus:open-chat', { detail: { conversationId: activeConversation.id } }))
+                                    },
+                                })
+                            }
+                        }
                         return res.data.messages
                     }
                     const lastIncoming = res.data.messages[res.data.messages.length - 1]
@@ -97,10 +120,10 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
             } catch {
                 // silent fallback
             }
-        }, 3500)
+        }, 3000)
 
         return () => clearInterval(interval)
-    }, [activeConversation, session.token])
+    }, [activeConversation, session.token, session.user.id])
 
     const sendMessage = async (payload: string | { message?: string; audio?: Blob; duration?: number }) => {
         if (!activeConversation || sending) return
