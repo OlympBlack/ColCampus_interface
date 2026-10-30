@@ -603,6 +603,13 @@ export async function toggleAdminUserValidation(token: string, userId: number) {
   })
 }
 
+export async function deleteAdminUser(token: string, userId: number) {
+  return requestJson<MessageResponse>(`/admin/users/${userId}`, {
+    method: 'DELETE',
+    headers: withAuthHeaders(token),
+  })
+}
+
 export async function fetchAdminAnnonces(token: string, params?: { statut?: string; q?: string }) {
   const q = new URLSearchParams()
   if (params?.statut) q.set('statut', params.statut)

@@ -12,6 +12,8 @@ import {
   ExternalLink,
   AlertTriangle,
   Mail,
+  UserCheck,
+  UserX,
 } from 'lucide-react'
 import type { AuthSession, DashboardData, AuthUser, Annonce } from '../../types'
 import {
@@ -19,6 +21,7 @@ import {
   reviewAdminKyc,
   fetchAdminUsers,
   toggleAdminUserValidation,
+  deleteAdminUser,
   fetchAdminAnnonces,
   deleteAdminAnnonce,
   toggleAdminAnnonceStatus,
@@ -60,6 +63,8 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
   const [userRoleFilter, setUserRoleFilter] = useState<string>('all')
   const [userSearch, setUserSearch] = useState<string>('')
   const [togglingUserId, setTogglingUserId] = useState<number | null>(null)
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null)
+  const [userToDelete, setUserToDelete] = useState<AuthUser | null>(null)
 
   // Gestion des annonces
   const [annonceList, setAnnonceList] = useState<Annonce[]>(adminData?.annonces_recentes ?? [])
@@ -268,6 +273,30 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
       })
     } finally {
       setTogglingUserId(null)
+    }
+  }
+
+  // Supprimer définitivement un utilisateur
+  async function handleDeleteUser(user: AuthUser) {
+    setDeletingUserId(user.id)
+    try {
+      const res = await deleteAdminUser(session.token, user.id)
+      setUserList((prev) => prev.filter((u) => u.id !== user.id))
+      setUserToDelete(null)
+      onToast({
+        tone: 'success',
+        title: 'Compte supprimé',
+        message: res.message || `Le compte de ${user.name} a été supprimé définitivement.`,
+      })
+      onRefreshData()
+    } catch (e) {
+      onToast({
+        tone: 'error',
+        title: 'Erreur',
+        message: e instanceof Error ? e.message : 'Impossible de supprimer cet utilisateur.',
+      })
+    } finally {
+      setDeletingUserId(null)
     }
   }
 
@@ -733,7 +762,7 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
                   <th className="py-3 px-3.5 border-r border-slate-200/80">Contact</th>
                   <th className="py-3 px-3.5 border-r border-slate-200/80">Statut KYC</th>
                   <th className="py-3 px-3.5 border-r border-slate-200/80 text-center">Validé</th>
-                  <th className="py-3 px-3.5 text-right w-36">Actions</th>
+                  <th className="py-3 px-3.5 text-right w-44">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -805,13 +834,72 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
                       </button>
                     </td>
                     <td className="py-2.5 px-3.5 text-right">
-                      <a
-                        href={`#/profile`}
-                        className="px-2.5 py-1.5 rounded-md border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 transition inline-flex items-center gap-1 font-semibold text-xs"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Consulter</span>
-                      </a>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Option 1 : Activer / Désactiver avec Infobulle */}
+                        <div className="relative group/btn">
+                          <button
+                            type="button"
+                            disabled={togglingUserId === user.id}
+                            onClick={() => handleToggleUserValidation(user)}
+                            className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                              user.is_valide
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+                            }`}
+                            aria-label={user.is_valide ? 'Désactiver le compte' : 'Activer le compte'}
+                          >
+                            {togglingUserId === user.id ? (
+                              <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                            ) : user.is_valide ? (
+                              <UserX className="w-3.5 h-3.5" />
+                            ) : (
+                              <UserCheck className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <div className="absolute bottom-full mb-1.5 right-0 pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-all duration-150 transform translate-y-1 group-hover/btn:translate-y-0 z-30">
+                            <div className="bg-slate-900 text-white text-[10px] font-medium py-1 px-2.5 rounded-md shadow-xl whitespace-nowrap">
+                              {user.is_valide ? 'Désactiver le compte (suspend la connexion)' : 'Activer / Valider le compte'}
+                              <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 right-2.5" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Option 2 : Supprimer avec Infobulle */}
+                        <div className="relative group/btn">
+                          <button
+                            type="button"
+                            disabled={deletingUserId === user.id}
+                            onClick={() => setUserToDelete(user)}
+                            className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition cursor-pointer"
+                            aria-label="Supprimer définitivement le compte"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="absolute bottom-full mb-1.5 right-0 pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-all duration-150 transform translate-y-1 group-hover/btn:translate-y-0 z-30">
+                            <div className="bg-rose-950 text-white text-[10px] font-medium py-1 px-2.5 rounded-md shadow-xl whitespace-nowrap">
+                              Supprimer définitivement ce compte
+                              <div className="w-2 h-2 bg-rose-950 rotate-45 absolute -bottom-1 right-2.5" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Option 3 : Consulter avec Infobulle */}
+                        <div className="relative group/btn">
+                          <a
+                            href={`#/profile`}
+                            className="p-1.5 rounded-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 hover:border-blue-200 transition inline-flex items-center"
+                            aria-label="Consulter le profil"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </a>
+                          <div className="absolute bottom-full mb-1.5 right-0 pointer-events-none opacity-0 group-hover/btn:opacity-100 transition-all duration-150 transform translate-y-1 group-hover/btn:translate-y-0 z-30">
+                            <div className="bg-slate-900 text-white text-[10px] font-medium py-1 px-2.5 rounded-md shadow-xl whitespace-nowrap">
+                              Consulter le profil
+                              <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 right-2.5" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -824,6 +912,58 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
             itemsPerPage={itemsPerPage}
             onPageChange={setUsersPage}
           />
+
+          {/* Modal de Confirmation de Suppression Utilisateur */}
+          {userToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Confirmer la suppression</h3>
+                    <p className="text-xs text-slate-500">Cette action est définitive et irréversible.</p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                  Êtes-vous sûr de vouloir supprimer définitivement le compte de{' '}
+                  <strong className="text-slate-900">{userToDelete.name} {userToDelete.prenoms}</strong>{' '}
+                  ({userToDelete.email}) ?
+                </p>
+
+                <div className="flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    disabled={deletingUserId === userToDelete.id}
+                    onClick={() => setUserToDelete(null)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deletingUserId === userToDelete.id}
+                    onClick={() => handleDeleteUser(userToDelete)}
+                    className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 transition shadow-sm cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    {deletingUserId === userToDelete.id ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Suppression...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Supprimer le compte</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
