@@ -166,8 +166,8 @@ export function RegisterFlow({
       const response = await registerUser(payload)
       onToast({
         tone: 'info',
-        title: 'Code envoyé',
-        message: 'Votre compte a été créé. Vérifiez votre email avec le code OTP.',
+        title: 'Validation envoyée',
+        message: 'Un email de validation vous a été envoyé. Cliquez sur le lien dans votre boîte mail pour activer votre compte.',
       })
       onSuccess(form.email, response.message)
     } catch (err) {

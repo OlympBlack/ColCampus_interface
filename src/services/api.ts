@@ -593,6 +593,13 @@ export async function fetchAdminUsers(token: string, params?: { role?: string; q
   })
 }
 
+export async function toggleAdminUserValidation(token: string, userId: number) {
+  return requestJson<{ message: string; data: AuthUser }>(`/admin/users/${userId}/toggle-validation`, {
+    method: 'PATCH',
+    headers: withAuthHeaders(token),
+  })
+}
+
 export async function fetchAdminAnnonces(token: string, params?: { statut?: string; q?: string }) {
   const q = new URLSearchParams()
   if (params?.statut) q.set('statut', params.statut)

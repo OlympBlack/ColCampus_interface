@@ -20,7 +20,14 @@ export function LoginForm({
   onRequireVerification: () => void
 }) {
   const [form, setForm] = useState(() => ({ email: consumePendingLoginEmail() ?? '', password: '' }))
-  const [notice, setNotice] = useState<string | null>(() => consumeAuthNotice())
+  const [notice, setNotice] = useState<string | null>(() => {
+    const consumed = consumeAuthNotice()
+    if (consumed) return consumed
+    if (typeof window !== 'undefined' && window.location.href.includes('validated=1')) {
+      return 'Félicitations ! Votre adresse email a été validée avec succès. Vous pouvez maintenant vous connecter.'
+    }
+    return null
+  })
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)

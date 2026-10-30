@@ -18,6 +18,7 @@ import {
   fetchAdminKycSubmissions,
   reviewAdminKyc,
   fetchAdminUsers,
+  toggleAdminUserValidation,
   fetchAdminAnnonces,
   deleteAdminAnnonce,
   toggleAdminAnnonceStatus,
@@ -58,6 +59,7 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
   const [userList, setUserList] = useState<AuthUser[]>(adminData?.utilisateurs_recents ?? [])
   const [userRoleFilter, setUserRoleFilter] = useState<string>('all')
   const [userSearch, setUserSearch] = useState<string>('')
+  const [togglingUserId, setTogglingUserId] = useState<number | null>(null)
 
   // Gestion des annonces
   const [annonceList, setAnnonceList] = useState<Annonce[]>(adminData?.annonces_recentes ?? [])
@@ -242,6 +244,30 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
         title: 'Erreur',
         message: e instanceof Error ? e.message : 'Erreur de mise à jour.',
       })
+    }
+  }
+
+  // Activer ou désactiver la validation d'un compte utilisateur
+  async function handleToggleUserValidation(user: AuthUser) {
+    setTogglingUserId(user.id)
+    try {
+      const res = await toggleAdminUserValidation(session.token, user.id)
+      setUserList((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, is_valide: res.data.is_valide } : u))
+      )
+      onToast({
+        tone: 'success',
+        title: 'Statut mis à jour',
+        message: res.message || `Le compte de ${user.name} a été actualisé.`,
+      })
+    } catch (e) {
+      onToast({
+        tone: 'error',
+        title: 'Erreur',
+        message: e instanceof Error ? e.message : 'Impossible de modifier la validation.',
+      })
+    } finally {
+      setTogglingUserId(null)
     }
   }
 
@@ -706,6 +732,7 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
                   <th className="py-3 px-3.5 border-r border-slate-200/80">Rôle</th>
                   <th className="py-3 px-3.5 border-r border-slate-200/80">Contact</th>
                   <th className="py-3 px-3.5 border-r border-slate-200/80">Statut KYC</th>
+                  <th className="py-3 px-3.5 border-r border-slate-200/80 text-center">Validé</th>
                   <th className="py-3 px-3.5 text-right w-36">Actions</th>
                 </tr>
               </thead>
@@ -749,6 +776,33 @@ export const DashboardAdmin: React.FC<DashboardAdminProps> = ({
                       }`}>
                         {user.statut_verification || 'non vérifié'}
                       </span>
+                    </td>
+                    <td className="py-2.5 px-3.5 border-r border-slate-200/80 text-center">
+                      <button
+                        type="button"
+                        disabled={togglingUserId === user.id}
+                        onClick={() => handleToggleUserValidation(user)}
+                        title={user.is_valide ? 'Compte validé (1) - Cliquer pour révoquer' : 'Compte non validé (0) - Cliquer pour valider'}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition cursor-pointer ${
+                          user.is_valide
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                        }`}
+                      >
+                        {togglingUserId === user.id ? (
+                          <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                        ) : user.is_valide ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>Validé (1)</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            <span>Non validé (0)</span>
+                          </>
+                        )}
+                      </button>
                     </td>
                     <td className="py-2.5 px-3.5 text-right">
                       <a

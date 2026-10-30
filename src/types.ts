@@ -358,6 +358,7 @@ export interface AuthUser {
   email: string
   telephone: string
   role: UserRole
+  is_valide?: boolean
   is_verified: boolean
   profile_completed: boolean
   statut_verification: VerificationStatus
