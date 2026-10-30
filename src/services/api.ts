@@ -30,7 +30,7 @@ import type {
   PropertyCollection,
   CollectionDraft,
 } from '../types'
-import { getStoredSession } from './session'
+import { getStoredSession, recordUserActivity } from './session'
 
 export interface AnnouncementFilters {
   type_annonce?: AnnouncementType
@@ -132,6 +132,10 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
       if (!response.ok) {
         throw new ApiError(payload?.message ?? 'Erreur de communication avec le backend.', response.status, payload)
+      }
+
+      if (init?.headers && ('Authorization' in init.headers || 'authorization' in (init.headers as any))) {
+        recordUserActivity()
       }
 
       return payload as T

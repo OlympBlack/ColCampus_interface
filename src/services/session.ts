@@ -2,15 +2,66 @@ import type { AuthSession } from '../types'
 
 const SESSION_KEY = 'colcampus.session'
 const LEGACY_SESSION_KEY = 'coluac.session'
+const LAST_ACTIVITY_KEY = 'colcampus.last-activity'
 const PENDING_LOGIN_EMAIL_KEY = 'colcampus.pending-login-email'
 const PENDING_VERIFICATION_EMAIL_KEY = 'colcampus.pending-verification-email'
 const AUTH_NOTICE_KEY = 'colcampus.auth-notice'
 const VERIFICATION_NOTICE_KEY = 'colcampus.verification-notice'
 
+export const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes d'inactivité
+
+export function recordUserActivity() {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
+  } catch {
+    // Ignore storage quota or access errors
+  }
+}
+
+export function getLastActivityTime(): number | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(LAST_ACTIVITY_KEY)
+    if (!raw) return null
+    const ts = parseInt(raw, 10)
+    return isNaN(ts) ? null : ts
+  } catch {
+    return null
+  }
+}
+
+export function isSessionExpiredByInactivity(timeoutMs = INACTIVITY_TIMEOUT_MS): boolean {
+  const lastActivity = getLastActivityTime()
+  if (!lastActivity) {
+    // Si la session existe mais aucune activité n'a encore été enregistrée,
+    // on initialise l'activité maintenant plutôt que d'expirer immédiatement.
+    recordUserActivity()
+    return false
+  }
+
+  return Date.now() - lastActivity > timeoutMs
+}
+
+export function clearUserActivity() {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(LAST_ACTIVITY_KEY)
+  } catch {
+    // Ignore
+  }
+}
+
 export function getStoredSession() {
   const rawValue = window.localStorage.getItem(SESSION_KEY) ?? window.localStorage.getItem(LEGACY_SESSION_KEY)
 
   if (!rawValue) {
+    return null
+  }
+
+  if (isSessionExpiredByInactivity()) {
+    clearSession()
+    setAuthNotice("Votre session a expiré après 30 minutes d'inactivité. Veuillez vous reconnecter.")
     return null
   }
 
@@ -30,17 +81,19 @@ export function getStoredSession() {
       },
     }
   } catch {
-    window.localStorage.removeItem(SESSION_KEY)
+    clearSession()
     return null
   }
 }
 
 export function storeSession(session: AuthSession) {
   window.localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+  recordUserActivity()
 }
 
 export function clearSession() {
   window.localStorage.removeItem(SESSION_KEY)
+  clearUserActivity()
 }
 
 export function updateStoredSessionUser(user: AuthSession['user']) {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { FilterDrawer, type ExplorerFilters } from './components/FilterDrawer'
 import { ToastViewport, type ToastDraft, type ToastItem } from './components/ToastViewport'
 import { CookieBanner } from './components/CookieBanner'
@@ -34,6 +34,7 @@ import {
   ForfaitsPage,
 } from './pages'
 import { useHashRoute } from './hooks/useHashRoute'
+import { useInactivityTimeout } from './hooks/useInactivityTimeout'
 import { fetchCurrentUser, logoutUser } from './services/api'
 import {
   clearSession,
@@ -243,6 +244,35 @@ export default function App() {
       window.location.hash = '#/'
     }
   }
+
+  const handleInactivityTimeout = useCallback(async () => {
+    if (!session) return
+
+    try {
+      await logoutUser(session.token)
+    } catch {
+      // Ignorer l'erreur réseau ou expiration antérieure
+    } finally {
+      clearSession()
+      setSession(null)
+      setIsProfileModalOpen(false)
+      setAuthNotice("Votre session a expiré après 30 minutes d'inactivité. Veuillez vous reconnecter.")
+      pushToast({
+        tone: 'info',
+        title: 'Session expirée',
+        message: "Vous avez été déconnecté suite à 30 minutes d'inactivité.",
+      })
+
+      if (route.name === 'dashboard' || route.name === 'publish' || route.name === 'profile') {
+        window.location.hash = '#login'
+      }
+    }
+  }, [session, route.name])
+
+  useInactivityTimeout({
+    session,
+    onTimeout: handleInactivityTimeout,
+  })
 
   const isDashboardRoute = route.name === 'dashboard'
   const isAuthRoute =
