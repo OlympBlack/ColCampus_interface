@@ -1,5 +1,5 @@
-// ColCampus Service Worker : PWA + Notifications Push système
-const CACHE_NAME = 'colcampus-pwa-v1'
+// ColEtuBenin Service Worker : PWA + Notifications Push système
+const CACHE_NAME = 'coletubenin-pwa-v1'
 const DEFAULT_ICON = '/icons/icon-192x192.png'
 
 // Ressources clés mises en cache dès l'installation
@@ -106,16 +106,16 @@ self.addEventListener('push', (event) => {
     payload = event.data ? { body: event.data.text() } : {}
   }
 
-  const title = payload.title || 'ColCampus'
+  const title = payload.title || 'ColEtuBenin'
   const conversationId = payload.conversationId
   const targetUrl =
     payload.url || (conversationId ? `/#/?conversation=${conversationId}` : '/#/')
 
   const options = {
-    body: payload.body || 'Vous avez un nouveau message sur ColCampus.',
+    body: payload.body || 'Vous avez un nouveau message sur ColEtuBenin.',
     icon: payload.icon || DEFAULT_ICON,
     badge: DEFAULT_ICON,
-    tag: payload.tag || 'colcampus-message',
+    tag: payload.tag || 'coletubenin-message',
     data: {
       url: targetUrl,
       conversationId,

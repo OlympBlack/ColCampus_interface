@@ -38,12 +38,15 @@ export function SiteFooter() {
         <div className="container">
           <div className="row">
             <div className="col-md-3 footer-item">
-              <a href="#/" style={{ display: 'inline-block', marginBottom: '14px' }}>
+              <a href="#/" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '14px', textDecoration: 'none' }}>
                 <img
                   src="/assets/images/logo_colcampus.png"
-                  alt="ColCampus"
-                  style={{ height: '38px', maxWidth: '200px', width: 'auto', objectFit: 'contain' }}
+                  alt="ColEtuBenin"
+                  style={{ height: '42px', width: 'auto', objectFit: 'contain' }}
                 />
+                <span style={{ fontSize: '22px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.3px' }}>
+                  Col<span style={{ color: '#a4c639' }}>Etu</span><span>Benin</span>
+                </span>
               </a>
               <h4>{settings.nom_plateforme}</h4>
               <p>{settings.description}</p>

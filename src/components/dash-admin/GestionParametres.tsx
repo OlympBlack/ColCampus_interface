@@ -159,7 +159,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
   }
 
   const handleReset = async () => {
-    if (!window.confirm('Voulez-vous réinitialiser tous les paramètres aux valeurs d’origine de ColCampus ?')) {
+    if (!window.confirm('Voulez-vous réinitialiser tous les paramètres aux valeurs d’origine de ColEtuBenin ?')) {
       return
     }
 
@@ -336,7 +336,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
                     required
                     value={nomPlateforme}
                     onChange={(e) => setNomPlateforme(e.target.value)}
-                    placeholder="Ex : ColCampus"
+                    placeholder="Ex : ColEtuBenin"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 bg-slate-50/50 focus:bg-white"
                   />
                 </div>
@@ -445,7 +445,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
                 type="email"
                 value={emailContact}
                 onChange={(e) => setEmailContact(e.target.value)}
-                placeholder="contact@colcampus.com"
+                placeholder="contact@coletubenin.com"
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 bg-slate-50/50 focus:bg-white"
               />
             </div>
@@ -460,7 +460,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
                 type="email"
                 value={emailSupport}
                 onChange={(e) => setEmailSupport(e.target.value)}
-                placeholder="support@colcampus.com"
+                placeholder="support@coletubenin.com"
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 bg-slate-50/50 focus:bg-white"
               />
             </div>
@@ -529,7 +529,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
                 type="text"
                 value={copyrightTexte}
                 onChange={(e) => setCopyrightTexte(e.target.value)}
-                placeholder="ColCampus. Tous droits réservés."
+                placeholder="ColEtuBenin. Tous droits réservés."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 bg-slate-50/50 focus:bg-white"
               />
             </div>

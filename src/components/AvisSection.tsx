@@ -9,7 +9,7 @@ const STEPS = [
   {
     icon: 'message-circle',
     title: '2. Les demarcheurs vous contactent',
-    text: 'Les demarcheurs qui ont une offre correspondante vous ecrivent directement dans la messagerie ColCampus.',
+    text: 'Les demarcheurs qui ont une offre correspondante vous ecrivent directement dans la messagerie ColEtuBenin.',
   },
   {
     icon: 'shield-check',

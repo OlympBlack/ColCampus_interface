@@ -87,7 +87,7 @@ export function useMessengerUnread(session: AuthSession | null) {
         : message.content || 'Vous a envoyé un message'
 
       showWebPushNotification({
-        title: `${partnerName} sur ColCampus`,
+        title: `${partnerName} sur ColEtuBenin`,
         body: preview,
         icon: partner?.photo_profil || '/assets/images/logo_colcampus_icon.png',
         tag: `colcampus-msg-${conv.id || 'chat'}`,

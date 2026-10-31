@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 
-const DISMISS_STORAGE_KEY = 'colcampus_pwa_dismissed_until'
+const DISMISS_STORAGE_KEY = 'coletubenin_pwa_dismissed_until'
 const DISMISS_DURATION_DAYS = 5
 
 export interface PwaInstallState {

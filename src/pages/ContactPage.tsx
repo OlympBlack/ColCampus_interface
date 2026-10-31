@@ -39,8 +39,8 @@ export function ContactPage({ session, onToast }: ContactPageProps) {
 
   const { settings } = usePlatformSettings()
   const displayTelephone = settings.telephone || '+229 01 54 47 00 02'
-  const displayEmailContact = settings.email_contact || 'contact@colcampus.com'
-  const displayEmailSupport = settings.email_support || 'support@colcampus.com'
+  const displayEmailContact = settings.email_contact || 'contact@coletubenin.com'
+  const displayEmailSupport = settings.email_support || 'support@coletubenin.com'
   const displayLocalisation = settings.campus_localisation || 'Campus du Bénin • Abomey-Calavi, Cotonou, Parakou, Abomey, Porto-Novo'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -77,7 +77,7 @@ export function ContactPage({ session, onToast }: ContactPageProps) {
       onToast({
         tone: 'success',
         title: 'Message transmis avec succès',
-        message: "Notre équipe ColCampus vous répondra dans les plus brefs délais.",
+        message: "Notre équipe ColEtuBenin vous répondra dans les plus brefs délais.",
       })
       setMessage('')
     } catch (err: any) {
@@ -184,7 +184,7 @@ export function ContactPage({ session, onToast }: ContactPageProps) {
                     <i className="fa fa-check-circle" style={{ fontSize: 52, color: '#a4c639' }}></i>
                     <h3 className="mt-3">Message envoyé avec succès !</h3>
                     <p className="mt-2">
-                      Merci pour votre message. Notre équipe ColCampus a bien reçu votre demande et vous contactera très
+                      Merci pour votre message. Notre équipe ColEtuBenin a bien reçu votre demande et vous contactera très
                       rapidement.
                     </p>
                     <button

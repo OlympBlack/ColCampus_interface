@@ -18,7 +18,7 @@ const TEMOIGNAGES = [
     nom: 'Yacoub Sanni',
     role: 'Démarcheur certifié',
     citation:
-      "Publier mes chambres sur ColCampus m'a permis de gagner un temps énorme. Les étudiants me contactent directement et les forfaits de publication sont très accessibles.",
+      "Publier mes chambres sur ColEtuBenin m'a permis de gagner un temps énorme. Les étudiants me contactent directement et les forfaits de publication sont très accessibles.",
   },
   {
     initiales: 'RB',
@@ -53,7 +53,7 @@ const TEMOIGNAGES = [
     nom: 'Grâce Nouatin',
     role: 'Étudiante en lettres, UAC',
     citation:
-      "L'interface est simple, tout est en français et les photos correspondent vraiment aux chambres. Je recommande ColCampus à tous mes camarades de promotion.",
+      "L'interface est simple, tout est en français et les photos correspondent vraiment aux chambres. Je recommande ColEtuBenin à tous mes camarades de promotion.",
   },
 ]
 
@@ -66,7 +66,7 @@ export function TestimonialsPage() {
           <div className="row">
             <div className="col-md-12">
               <h1>Témoignages</h1>
-              <span>Ce que la communauté étudiante pense de ColCampus</span>
+              <span>Ce que la communauté étudiante pense de ColEtuBenin</span>
               <nav aria-label="Fil d'Ariane" className="mt-3">
                 <ol className="flex flex-wrap items-center justify-center gap-2 list-none p-0 m-0 text-sm text-white/80">
                   <li>

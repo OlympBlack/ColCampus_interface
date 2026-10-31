@@ -60,7 +60,7 @@ export function getPrimaryImage(annonce: Annonce) {
 }
 
 export function getAuthorName(annonce: Annonce) {
-  return [annonce.user.prenoms, annonce.user.name].filter(Boolean).join(' ') || 'Annonceur ColCampus'
+  return [annonce.user.prenoms, annonce.user.name].filter(Boolean).join(' ') || 'Annonceur ColEtuBenin'
 }
 
 export function getAuthorProfilePhoto(annonce: Annonce) {

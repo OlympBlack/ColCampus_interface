@@ -144,7 +144,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     if (granted) {
       playMagicChime()
       await showWebPushNotification({
-        title: 'ColCampus Messagerie',
+        title: 'ColEtuBenin Messagerie',
         body: '🎉 Notifications activées : vous serez alerté même dans une autre application.',
         icon: '/assets/images/logo_colcampus_icon.png',
         force: true,
@@ -157,7 +157,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
   const handleTestPush = async () => {
     playMagicChime()
     await showWebPushNotification({
-      title: 'ColCampus Messagerie',
+      title: 'ColEtuBenin Messagerie',
       body: '🔔 Test : Vos notifications en haut du téléphone fonctionnent parfaitement !',
       icon: '/assets/images/logo_colcampus_icon.png',
       force: true,
@@ -183,7 +183,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
           }}
         >
           <span style={{ lineHeight: 1.3 }}>
-            🔕 Notifications bloquées. Autorisez ColCampus dans les réglages de votre navigateur
+            🔕 Notifications bloquées. Autorisez ColEtuBenin dans les réglages de votre navigateur
             (Site settings → Notifications) pour recevoir les alertes.
           </span>
         </div>
@@ -884,7 +884,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={styles.chatName}>{partnerName}</span>
                     {isPartnerVerified && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 15, height: 15, borderRadius: '50%', backgroundColor: '#10B981', color: '#FFFFFF', flexShrink: 0 }} title="Identité vérifiée ColCampus">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 15, height: 15, borderRadius: '50%', backgroundColor: '#10B981', color: '#FFFFFF', flexShrink: 0 }} title="Identité vérifiée ColEtuBenin">
                         <UiIcon name="check" />
                       </span>
                     )}
@@ -948,7 +948,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
               <div className="colcampus-chat-security-banner">
                 <UiIcon name="shield-check" className="colcampus-chat-shield-icon" />
                 <span>
-                  <strong>ColCampus Sécurisé</strong> · Ne versez aucun acompte avant visite préalable du bien.
+                  <strong>ColEtuBenin Sécurisé</strong> · Ne versez aucun acompte avant visite préalable du bien.
                 </span>
               </div>
 
@@ -969,7 +969,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                     <div className="colcampus-starter-name">
                       {partnerName}
                       {isPartnerVerified && (
-                        <span className="colcampus-verified-badge" title="Identité vérifiée ColCampus">
+                        <span className="colcampus-verified-badge" title="Identité vérifiée ColEtuBenin">
                           <UiIcon name="check" />
                         </span>
                       )}

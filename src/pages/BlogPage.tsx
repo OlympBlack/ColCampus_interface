@@ -16,7 +16,7 @@ const ARTICLES: BlogPostMeta[] = [
   {
     slug: 'trouver-chambre-etudiante-campus-benin',
     titre: 'Comment trouver une chambre étudiante près de son campus sans se faire avoir ?',
-    auteur: 'Rédaction ColCampus',
+    auteur: 'Rédaction ColEtuBenin',
     date: '12.10.2026',
     commentaires: 8,
     categorie: 'Logement & Campus',
@@ -28,7 +28,7 @@ const ARTICLES: BlogPostMeta[] = [
   {
     slug: 'vivre-en-colocation-campus-avantages-defis',
     titre: "Vivre en colocation sur son campus : avantages, défis et conseils pratiques",
-    auteur: 'Rédaction ColCampus',
+    auteur: 'Rédaction ColEtuBenin',
     date: '28.09.2026',
     commentaires: 5,
     categorie: 'Vie en Colocation',
@@ -39,8 +39,8 @@ const ARTICLES: BlogPostMeta[] = [
   },
   {
     slug: 'deposer-annonce-chambre-efficace',
-    titre: "Déposer une annonce de chambre efficace : le guide ColCampus",
-    auteur: 'Rédaction ColCampus',
+    titre: "Déposer une annonce de chambre efficace : le guide ColEtuBenin",
+    auteur: 'Rédaction ColEtuBenin',
     date: '05.09.2026',
     commentaires: 12,
     categorie: 'Conseils Binôme',

@@ -16,15 +16,15 @@ const LEGAL_PAGES: Record<
   'mentions-legales': {
     eyebrow: 'Informations légales',
     title: 'Mentions légales',
-    intro: "Ces informations donnent un cadre minimum clair à l'exploitation de la plateforme ColCampus.",
+    intro: "Ces informations donnent un cadre minimum clair à l'exploitation de la plateforme ColEtuBenin.",
     sections: [
       {
         title: 'Éditeur de la plateforme',
-        body: "ColCampus est une plateforme web de mise en relation autour des chambres et colocations étudiantes sur les campus du Bénin : l'Université d'Abomey-Calavi (UAC), l'Université Nationale d'Agriculture (UNA) à Porto-Novo, l'Université Nationale des Sciences, Technologies, Ingénierie et Mathématiques (UNSTIM) à Abomey et l'Université de Parakou (UP). Le projet est en phase de développement et d'amélioration continue au sein de l'écosystème des universités publiques du pays.",
+        body: "ColEtuBenin est une plateforme web de mise en relation autour des chambres et colocations étudiantes sur les campus du Bénin : l'Université d'Abomey-Calavi (UAC), l'Université Nationale d'Agriculture (UNA) à Porto-Novo, l'Université Nationale des Sciences, Technologies, Ingénierie et Mathématiques (UNSTIM) à Abomey et l'Université de Parakou (UP). Le projet est en phase de développement et d'amélioration continue au sein de l'écosystème des universités publiques du pays.",
       },
       {
         title: 'Responsable de publication',
-        body: "Le responsable de publication est l'équipe porteuse du projet ColCampus. Pour toute question, les utilisateurs peuvent utiliser les canaux de contact communiqués dans la plateforme.",
+        body: "Le responsable de publication est l'équipe porteuse du projet ColEtuBenin. Pour toute question, les utilisateurs peuvent utiliser les canaux de contact communiqués dans la plateforme.",
       },
       {
         title: 'Hébergement et disponibilité',
@@ -35,11 +35,11 @@ const LEGAL_PAGES: Record<
   cgu: {
     eyebrow: "Cadre d'utilisation",
     title: "Conditions Générales d'Utilisation",
-    intro: 'Les présentes CGU définissent les règles de base liées à l’utilisation de la plateforme ColCampus.',
+    intro: 'Les présentes CGU définissent les règles de base liées à l’utilisation de la plateforme ColEtuBenin.',
     sections: [
       {
         title: 'Objet du service',
-        body: "ColCampus permet la consultation d'annonces de logement étudiant, la mise en relation entre utilisateurs (étudiants, bailleurs, démarcheurs) et la diffusion de contenus promotionnels ou informatifs.",
+        body: "ColEtuBenin permet la consultation d'annonces de logement étudiant, la mise en relation entre utilisateurs (étudiants, bailleurs, démarcheurs) et la diffusion de contenus promotionnels ou informatifs.",
       },
       {
         title: 'Engagement des utilisateurs',
@@ -54,11 +54,11 @@ const LEGAL_PAGES: Record<
   'politique-privee': {
     eyebrow: 'Données personnelles',
     title: 'Politique privée',
-    intro: 'Cette politique résume l’usage des données personnelles de base nécessaires au fonctionnement de ColCampus.',
+    intro: 'Cette politique résume l’usage des données personnelles de base nécessaires au fonctionnement de ColEtuBenin.',
     sections: [
       {
         title: 'Données collectées',
-        body: "Lors de l'inscription ou de l'utilisation du service, ColCampus peut traiter des données telles que le nom, les prénoms, l'email, le téléphone et le rôle de l'utilisateur.",
+        body: "Lors de l'inscription ou de l'utilisation du service, ColEtuBenin peut traiter des données telles que le nom, les prénoms, l'email, le téléphone et le rôle de l'utilisateur.",
       },
       {
         title: 'Finalités',
@@ -108,7 +108,7 @@ export function LegalPage({ page }: LegalPageProps) {
           <div className="more-info-content">
             <div className="right-content">
               <span>{content.eyebrow}</span>
-              <h5>ColCampus — {content.title}</h5>
+              <h5>ColEtuBenin — {content.title}</h5>
               <br />
               <p>{content.intro}</p>
               <br />

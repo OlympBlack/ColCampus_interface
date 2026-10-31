@@ -142,7 +142,7 @@ export function AvisPage({ session, onToast }: AvisPageProps) {
       onToast({
         tone: 'success',
         title: 'Discussion ouverte',
-        message: 'Presentez votre offre a l etudiant dans la messagerie ColCampus.',
+        message: 'Presentez votre offre a l etudiant dans la messagerie ColEtuBenin.',
       })
     } catch (err: any) {
       onToast({
@@ -433,7 +433,7 @@ export function AvisPage({ session, onToast }: AvisPageProps) {
             </span>
             <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: '#64748b' }}>
               <strong style={{ color: '#0f172a' }}>Conseil securite :</strong> ne versez jamais d acompte avant d avoir visite le logement
-              et verifie l identite du demarcheur. Toutes les discussions restent dans la messagerie ColCampus.
+              et verifie l identite du demarcheur. Toutes les discussions restent dans la messagerie ColEtuBenin.
             </p>
           </div>
         </div>
