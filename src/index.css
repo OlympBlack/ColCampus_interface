@@ -502,7 +502,7 @@ header .navbar {
 .navbar .navbar-brand h2 em {
   font-style: normal !important;
   font-size: inherit !important;
-  color: #00c162 !important;
+  color: #a4c639 !important;
 }
 
 .background-header .navbar-brand h2 {
@@ -510,7 +510,7 @@ header .navbar {
 }
 
 .background-header .navbar-brand h2 em {
-  color: #00a854 !important;
+  color: #8aad2a !important;
   font-style: normal !important;
 }
 
@@ -528,7 +528,7 @@ header.header-solid-page .navbar-brand h2 {
 }
 
 header.header-solid-page .navbar-brand h2 em {
-  color: #00a854 !important;
+  color: #8aad2a !important;
   font-style: normal !important;
 }
 

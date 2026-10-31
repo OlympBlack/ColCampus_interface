@@ -50,7 +50,7 @@ export const PwaInstallPrompt: React.FC = () => {
                 width: '44px',
                 height: '44px',
                 borderRadius: '11px',
-                boxShadow: '0 3px 8px rgba(0, 193, 98, 0.35)',
+                boxShadow: '0 3px 8px rgba(164, 198, 57, 0.35)',
                 flexShrink: 0,
               }}
             />
@@ -74,8 +74,8 @@ export const PwaInstallPrompt: React.FC = () => {
                     fontSize: '10px',
                     fontWeight: 800,
                     textTransform: 'uppercase',
-                    backgroundColor: 'rgba(0, 193, 98, 0.2)',
-                    color: '#00c162',
+                    backgroundColor: 'rgba(164, 198, 57, 0.2)',
+                    color: '#a4c639',
                     padding: '2px 6px',
                     borderRadius: '6px',
                     letterSpacing: '0.5px',
@@ -106,7 +106,7 @@ export const PwaInstallPrompt: React.FC = () => {
                 void promptInstall()
               }}
               style={{
-                backgroundColor: '#00c162',
+                backgroundColor: '#a4c639',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '9999px',
@@ -117,16 +117,16 @@ export const PwaInstallPrompt: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: '0 4px 12px rgba(0, 193, 98, 0.4)',
+                boxShadow: '0 4px 12px rgba(164, 198, 57, 0.4)',
                 transition: 'transform 0.15s ease, background-color 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.03)'
-                e.currentTarget.style.backgroundColor = '#00ad58'
+                e.currentTarget.style.backgroundColor = '#8fad26'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'scale(1)'
-                e.currentTarget.style.backgroundColor = '#00c162'
+                e.currentTarget.style.backgroundColor = '#a4c639'
               }}
             >
               <i className="fa fa-download" style={{ fontSize: '11px' }}></i>
@@ -247,7 +247,7 @@ export const PwaInstallPrompt: React.FC = () => {
               >
                 <span
                   style={{
-                    backgroundColor: '#00c162',
+                    backgroundColor: '#a4c639',
                     color: '#ffffff',
                     width: '26px',
                     height: '26px',
@@ -279,7 +279,7 @@ export const PwaInstallPrompt: React.FC = () => {
               >
                 <span
                   style={{
-                    backgroundColor: '#00c162',
+                    backgroundColor: '#a4c639',
                     color: '#ffffff',
                     width: '26px',
                     height: '26px',
@@ -311,7 +311,7 @@ export const PwaInstallPrompt: React.FC = () => {
               >
                 <span
                   style={{
-                    backgroundColor: '#00c162',
+                    backgroundColor: '#a4c639',
                     color: '#ffffff',
                     width: '26px',
                     height: '26px',
@@ -337,7 +337,7 @@ export const PwaInstallPrompt: React.FC = () => {
               onClick={() => setShowIosGuide(false)}
               style={{
                 width: '100%',
-                backgroundColor: '#00c162',
+                backgroundColor: '#a4c639',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '12px',
@@ -346,6 +346,13 @@ export const PwaInstallPrompt: React.FC = () => {
                 fontWeight: 700,
                 cursor: 'pointer',
                 marginTop: '8px',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#8fad26'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#a4c639'
               }}
             >
               Compris !
@@ -357,7 +364,7 @@ export const PwaInstallPrompt: React.FC = () => {
   )
 }
 
-// Petit bouton pouvant être placé dans le menu mobile ou le footer
+// Petit bouton pouvant être placé dans le footer
 export const PwaInstallButton: React.FC<{
   className?: string
   style?: React.CSSProperties
@@ -378,9 +385,9 @@ export const PwaInstallButton: React.FC<{
         display: 'inline-flex',
         alignItems: 'center',
         gap: '8px',
-        backgroundColor: 'rgba(0, 193, 98, 0.12)',
-        color: '#00c162',
-        border: '1px solid rgba(0, 193, 98, 0.35)',
+        backgroundColor: 'rgba(164, 198, 57, 0.15)',
+        color: '#a4c639',
+        border: '1px solid rgba(164, 198, 57, 0.4)',
         borderRadius: '9999px',
         padding: '7px 14px',
         fontSize: '13px',
@@ -390,12 +397,12 @@ export const PwaInstallButton: React.FC<{
         ...style,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#00c162'
+        e.currentTarget.style.backgroundColor = '#a4c639'
         e.currentTarget.style.color = '#ffffff'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(0, 193, 98, 0.12)'
-        e.currentTarget.style.color = '#00c162'
+        e.currentTarget.style.backgroundColor = 'rgba(164, 198, 57, 0.15)'
+        e.currentTarget.style.color = '#a4c639'
       }}
     >
       <i className="fa fa-mobile" style={{ fontSize: '16px' }}></i>

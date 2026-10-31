@@ -186,7 +186,7 @@ export function AudioMessagePlayer({ src, duration, isMine }: AudioMessagePlayer
   // Couleurs selon bulle émetteur / récepteur
   const buttonBg = isMine ? 'rgba(255, 255, 255, 0.28)' : '#a4c639'
   const buttonHoverBg = isMine ? 'rgba(255, 255, 255, 0.38)' : '#8fad26'
-  const activeColor = isMine ? '#ffffff' : '#00a854'
+  const activeColor = isMine ? '#ffffff' : '#a4c639'
   const inactiveColor = isMine ? 'rgba(255, 255, 255, 0.42)' : '#cbd5e1'
   const trackBg = isMine ? 'rgba(255, 255, 255, 0.2)' : '#e2e8f0'
   const textColor = isMine ? 'rgba(255, 255, 255, 0.95)' : '#475569'
