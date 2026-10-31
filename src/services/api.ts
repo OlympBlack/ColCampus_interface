@@ -97,6 +97,7 @@ function resolveApiBaseUrls() {
 
   // Détection automatique de la production (sous-domaine de lavoixdabouloussi.org)
   if (hostname.includes('lavoixdabouloussi.org')) {
+    candidates.push('https://coletubeninapi.lavoixdabouloussi.org/api')
     candidates.push('https://colcampusapi.lavoixdabouloussi.org/api')
   }
 
