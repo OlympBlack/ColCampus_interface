@@ -132,7 +132,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
       const payload = await response.json().catch(() => null)
 
       if (!response.ok) {
-        throw new ApiError(payload?.message ?? 'Erreur de communication avec le backend.', response.status, payload)
+        throw new ApiError(payload?.message ?? 'Une erreur est survenue lors de la communication avec le serveur.', response.status, payload)
       }
 
       if (init?.headers && ('Authorization' in init.headers || 'authorization' in (init.headers as any))) {
@@ -147,8 +147,12 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     }
   }
 
-  const triedBaseUrls = resolveApiBaseUrls().join(', ')
-  throw new Error(`Impossible de joindre l'API sur ${triedBaseUrls}. Verifiez que le backend Laravel est accessible sur le reseau local.`)
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+  if (isOffline) {
+    throw new Error('Connexion impossible. Veuillez vérifier votre connexion Internet et réessayer.')
+  }
+
+  throw new Error('Connexion impossible. Veuillez vérifier votre connexion Internet ou réessayer ultérieurement.')
 }
 function buildQuery(filters: AnnouncementFilters) {
   const params = new URLSearchParams()

@@ -4,7 +4,6 @@ import { useAnnouncements } from '../hooks/useAnnouncements'
 import { CATEGORY_OPTIONS } from '../constants'
 import type { ExplorerFilters } from '../components/FilterDrawer'
 import { LoadingState, EmptyState } from '../components/States'
-import { API_BASE_URL } from '../services/api'
 import { UiIcon } from '../components/UiIcons'
 import { AnnonceCard } from '../components/AnnonceCard'
 
@@ -149,9 +148,9 @@ export function ListingPage({ filters, onChangeFilters, onOpenFilters }: Listing
 
           {error ? (
             <div className="error-state">
-              <strong>Chargement impossible.</strong>
+              <strong>Connexion impossible</strong>
               <p>
-                Verifiez que l'API Laravel repond bien sur <code>{API_BASE_URL}</code>.
+                {error || 'Veuillez vérifier votre connexion Internet et réessayer.'}
               </p>
             </div>
           ) : null}

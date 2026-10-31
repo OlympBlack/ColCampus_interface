@@ -1,6 +1,5 @@
 import { CATEGORY_OPTIONS, type CategoryFilterValue } from '../constants'
 import { useAnnouncements } from '../hooks/useAnnouncements'
-import { API_BASE_URL } from '../services/api'
 import type { Annonce } from '../types'
 import {
   formatAnnouncementType,
@@ -134,9 +133,9 @@ export function AnnonceExplorer({
 
       {error ? (
         <div className={'error-state'}>
-          <strong>Chargement impossible.</strong>
+          <strong>Connexion impossible</strong>
           <p>
-            Verifiez que l'API Laravel repond bien sur <code>{API_BASE_URL}</code>.
+            {error || 'Veuillez vérifier votre connexion Internet et réessayer.'}
           </p>
         </div>
       ) : null}
