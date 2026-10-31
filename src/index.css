@@ -77,6 +77,7 @@ body {
     transform: translateX(calc(100% + 20px));
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -84,8 +85,13 @@ body {
 }
 
 @keyframes toast-progress {
-  from { width: 100%; }
-  to { width: 0%; }
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
 }
 
 @keyframes slide-up {
@@ -93,6 +99,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -100,8 +107,13 @@ body {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalSlideUp {
@@ -109,6 +121,7 @@ body {
     opacity: 0;
     transform: translateY(40px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -120,6 +133,7 @@ body {
     opacity: 0;
     transform: translateY(18px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -132,6 +146,7 @@ body {
     transform: translateY(30px);
     filter: blur(8px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -140,8 +155,15 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -296,10 +318,25 @@ body {
   border-radius: 20px;
 }
 
-.app-badge--success { background: #eef6d4; color: #6f8d21; }
-.app-badge--warning { background: #fff7e8; color: #b7791f; }
-.app-badge--danger { background: #fff1f2; color: #e11d48; }
-.app-badge--muted { background: #f4f4f4; color: #666; }
+.app-badge--success {
+  background: #eef6d4;
+  color: #6f8d21;
+}
+
+.app-badge--warning {
+  background: #fff7e8;
+  color: #b7791f;
+}
+
+.app-badge--danger {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.app-badge--muted {
+  background: #f4f4f4;
+  color: #666;
+}
 
 /* Panneau / bloc de contenu */
 .app-panel {
@@ -360,21 +397,33 @@ body {
 }
 
 @keyframes app-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Scrollbar discrete */
-.app-scroll::-webkit-scrollbar { width: 6px; }
-.app-scroll::-webkit-scrollbar-thumb { background: #d9dde3; border-radius: 6px; }
+.app-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-scroll::-webkit-scrollbar-thumb {
+  background: #d9dde3;
+  border-radius: 6px;
+}
 
 /* Le carrousel du template a besoin d'une hauteur minimale sur mobile */
 @media (max-width: 767px) {
-  .Modern-Slider .text-content h4 { font-size: 26px; }
+  .Modern-Slider .text-content h4 {
+    font-size: 26px;
+  }
 }
 
 /* Tailwind v4 scanne nos classes Bootstrap et génère `.collapse { visibility: collapse }`,
    ce qui rend le menu desktop invisible/incliquable. Bootstrap gère le masquage via display:none. */
-.collapse { visibility: visible; }
+.collapse {
+  visibility: visible;
+}
 
 /* ==========================================================================
 /* ==========================================================================
@@ -411,21 +460,25 @@ body {
     display: block !important;
     padding: 6px 0 !important;
   }
+
   .sub-header .left-info {
     gap: 10px !important;
     font-size: 11.5px !important;
     justify-content: center !important;
     width: 100% !important;
   }
+
   .sub-header .left-info li {
     padding: 0 6px !important;
     border: none !important;
   }
+
   .sub-header .left-info li a,
   .sub-header .left-info li span {
     font-size: 11.5px !important;
     color: #ffffff !important;
   }
+
   .sub-header .right-icons {
     display: none !important;
   }
@@ -562,7 +615,7 @@ header.header-solid-page .colcampus-nav .nav-link:hover {
   border-color: #ddeba8 !important;
 }
 
-header.header-solid-page .colcampus-nav .nav-item.active > .nav-link,
+header.header-solid-page .colcampus-nav .nav-item.active>.nav-link,
 header.header-solid-page .colcampus-nav .nav-link.active {
   color: #ffffff !important;
   background: #a4c639 !important;
@@ -632,6 +685,7 @@ header.header-solid-page .header-user-name {
   .header-brand-logo {
     height: 36px;
   }
+
   .header-brand-wrap {
     gap: 6px;
   }
@@ -688,7 +742,7 @@ header:not(.background-header):not(.header-solid-page) .header-brand-badge {
   border: none !important;
 }
 
-/* Individual navigation tabs: clean, centered, no broken underlines */
+/* Individual navigation tabs: clean, centered, no broken */
 .colcampus-nav .nav-link {
   margin: 0 !important;
   padding: 8px 16px !important;
@@ -703,7 +757,8 @@ header:not(.background-header):not(.header-solid-page) .header-brand-badge {
   white-space: nowrap !important;
   text-transform: capitalize !important;
   text-decoration: none !important;
-  border-bottom: none !important; /* Removes template's curved underline */
+  border-bottom: none !important;
+  /* Removes template's curved underline */
   border: 1px solid transparent !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   line-height: 1 !important;
@@ -724,7 +779,7 @@ header:not(.background-header):not(.header-solid-page) .header-brand-badge {
     transform: translateY(-1px);
   }
 
-  header:not(.background-header):not(.header-solid-page) .colcampus-nav .nav-item.active > .nav-link,
+  header:not(.background-header):not(.header-solid-page) .colcampus-nav .nav-item.active>.nav-link,
   header:not(.background-header):not(.header-solid-page) .colcampus-nav .nav-link.active {
     color: #ffffff !important;
     background: #a4c639 !important;
@@ -747,7 +802,7 @@ header:not(.background-header):not(.header-solid-page) .header-brand-badge {
   transform: translateY(-1px);
 }
 
-.background-header .colcampus-nav .nav-item.active > .nav-link,
+.background-header .colcampus-nav .nav-item.active>.nav-link,
 .background-header .colcampus-nav .nav-link.active {
   color: #ffffff !important;
   background: #a4c639 !important;
@@ -801,6 +856,7 @@ header:not(.background-header):not(.header-solid-page) .header-brand-badge {
   .header-mobile-right-group {
     gap: 6px;
   }
+
   .header-mobile-quick-actions {
     gap: 6px;
   }
@@ -874,6 +930,7 @@ header.mobile-menu-active .header-action-btn.active {
     width: 38px;
     height: 38px;
   }
+
   .header-mobile-quick-actions .header-action-btn i {
     font-size: 15px;
   }
@@ -1015,15 +1072,37 @@ header:not(.background-header):not(.header-solid-page) .header-user-name {
   letter-spacing: 0.3px;
 }
 
-.role-tag-admin { color: #f87171; }
-.role-tag-etudiant { color: #a4c639; }
-.role-tag-demarcheur { color: #fbbf24; }
-.role-tag-boutique { color: #c084fc; }
+.role-tag-admin {
+  color: #f87171;
+}
 
-.background-header .role-tag-admin { color: #dc2626; }
-.background-header .role-tag-etudiant { color: #6f8d21; }
-.background-header .role-tag-demarcheur { color: #b45309; }
-.background-header .role-tag-boutique { color: #7e22ce; }
+.role-tag-etudiant {
+  color: #a4c639;
+}
+
+.role-tag-demarcheur {
+  color: #fbbf24;
+}
+
+.role-tag-boutique {
+  color: #c084fc;
+}
+
+.background-header .role-tag-admin {
+  color: #dc2626;
+}
+
+.background-header .role-tag-etudiant {
+  color: #6f8d21;
+}
+
+.background-header .role-tag-demarcheur {
+  color: #b45309;
+}
+
+.background-header .role-tag-boutique {
+  color: #7e22ce;
+}
 
 .header-profile-chevron {
   font-size: 11px;
@@ -1274,11 +1353,17 @@ header:not(.background-header):not(.header-solid-page) .header-user-name {
 }
 
 @keyframes mobileBackdropFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 991.98px) {
+
   /* Alignment in header container on mobile */
   .navbar .navbar-brand {
     position: static !important;
@@ -1392,6 +1477,7 @@ header:not(.background-header):not(.header-solid-page) .header-user-name {
       opacity: 0;
       transform: translateY(-8px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -1451,15 +1537,15 @@ header:not(.background-header):not(.header-solid-page) .header-user-name {
   }
 
   /* Active state on mobile links */
-  header #navbarResponsive .colcampus-nav .nav-item.active > .nav-link,
+  header #navbarResponsive .colcampus-nav .nav-item.active>.nav-link,
   header #navbarResponsive .colcampus-nav .nav-link.active,
-  header:not(.background-header) #navbarResponsive .colcampus-nav .nav-item.active > .nav-link,
+  header:not(.background-header) #navbarResponsive .colcampus-nav .nav-item.active>.nav-link,
   header:not(.background-header) #navbarResponsive .colcampus-nav .nav-link.active,
-  header.background-header #navbarResponsive .colcampus-nav .nav-item.active > .nav-link,
+  header.background-header #navbarResponsive .colcampus-nav .nav-item.active>.nav-link,
   header.background-header #navbarResponsive .colcampus-nav .nav-link.active,
-  header.header-solid-page #navbarResponsive .colcampus-nav .nav-item.active > .nav-link,
+  header.header-solid-page #navbarResponsive .colcampus-nav .nav-item.active>.nav-link,
   header.header-solid-page #navbarResponsive .colcampus-nav .nav-link.active,
-  header.mobile-menu-active #navbarResponsive .colcampus-nav .nav-item.active > .nav-link,
+  header.mobile-menu-active #navbarResponsive .colcampus-nav .nav-item.active>.nav-link,
   header.mobile-menu-active #navbarResponsive .colcampus-nav .nav-link.active {
     color: #ffffff !important;
     background: #a4c639 !important;
@@ -1745,7 +1831,7 @@ header:not(.background-header):not(.header-solid-page) .header-user-name {
 }
 
 .service-item .service-item-img-link,
-.service-item > a:first-child {
+.service-item>a:first-child {
   display: block !important;
   overflow: hidden !important;
   height: 220px !important;
@@ -2093,12 +2179,10 @@ header:not(.background-header):not(.header-solid-page) .header-user-name {
   content: '' !important;
   position: absolute !important;
   inset: 0 !important;
-  background: linear-gradient(
-    to right,
-    rgba(15, 23, 42, 0.78) 0%,
-    rgba(15, 23, 42, 0.58) 50%,
-    rgba(15, 23, 42, 0.42) 100%
-  ) !important;
+  background: linear-gradient(to right,
+      rgba(15, 23, 42, 0.78) 0%,
+      rgba(15, 23, 42, 0.58) 50%,
+      rgba(15, 23, 42, 0.42) 100%) !important;
   pointer-events: none !important;
   z-index: 1 !important;
 }
@@ -2451,6 +2535,7 @@ body:has(.dashboard-shell) {
 
 /* Sidebar mobile drawer enforcement */
 @media (max-width: 767.98px) {
+
   aside.dashboard-sidebar,
   .dashboard-sidebar {
     position: fixed !important;
@@ -2484,6 +2569,7 @@ body:has(.dashboard-shell) {
 }
 
 @media (min-width: 768px) {
+
   aside.dashboard-sidebar,
   .dashboard-sidebar {
     position: relative !important;
@@ -2595,6 +2681,7 @@ body:has(.dashboard-shell) {
     opacity: 0;
     transform: translate(-50%, 20px);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, 0);
@@ -2605,13 +2692,8 @@ body:has(.dashboard-shell) {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
-
-
-
-
-
-
