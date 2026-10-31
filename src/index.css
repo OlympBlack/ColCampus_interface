@@ -604,7 +604,11 @@ header.header-solid-page .header-user-name {
 .header-brand-wrap {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 0;
+}
+
+.header-brand-wrap h2 {
+  margin-left: -5px !important;
 }
 
 .header-brand-logo {
@@ -620,7 +624,10 @@ header.header-solid-page .header-user-name {
     height: 38px;
   }
   .header-brand-wrap {
-    gap: 3px;
+    gap: 0;
+  }
+  .header-brand-wrap h2 {
+    margin-left: -4px !important;
   }
 }
 
