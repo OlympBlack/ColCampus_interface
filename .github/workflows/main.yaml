@@ -26,6 +26,13 @@ jobs:
           VITE_API_BASE_URL: https://colcampusapi.lavoixdabouloussi.org/api
         run: npm run build
 
+      - name: Verify FTP Secrets
+        run: |
+          echo "=== Vérification des secrets FTP ==="
+          if [ -z "${{ secrets.FTP_SERVER }}" ]; then echo "❌ Secret FTP_SERVER manquant ou vide !"; else echo "✅ FTP_SERVER présent"; fi
+          if [ -z "${{ secrets.FTP_USERNAME }}" ]; then echo "❌ Secret FTP_USERNAME manquant ou vide !"; else echo "✅ FTP_USERNAME présent"; fi
+          if [ -z "${{ secrets.FTP_PASSWORD }}" ]; then echo "❌ Secret FTP_PASSWORD manquant ou vide !"; else echo "✅ FTP_PASSWORD présent"; fi
+
       - name: Sync dist files directly to domain
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -34,6 +41,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ./
           local-dir: ./dist/
+          log-level: verbose
           exclude: |
             **/.git*
             **/.git*/**
