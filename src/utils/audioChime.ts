@@ -1,8 +1,9 @@
 /**
  * Synthétiseur Web Audio API pour le son magique "cloohummmm"
- * Aucune dépendance réseau, aucun fichier audio externe nécessaire,
+ * Aucune dépendance réseau, aucun fichier externe nécessaire,
  * fonctionne immédiatement sur mobile et desktop.
  */
+
 let audioCtx: AudioContext | null = null
 
 function getAudioContext(): AudioContext | null {
@@ -22,6 +23,24 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
+// Déverrouillage automatique dès le premier contact de l'utilisateur avec l'écran
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    try {
+      const ctx = getAudioContext()
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {})
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  window.addEventListener('click', unlockAudio, { passive: true })
+  window.addEventListener('touchstart', unlockAudio, { passive: true })
+  window.addEventListener('keydown', unlockAudio, { passive: true })
+}
+
 /**
  * Joue le son de notification "cloohummmm"
  * - Attaque douce et clochette "cloo" (560Hz -> 440Hz)
@@ -31,24 +50,29 @@ export function playMagicChime() {
   const ctx = getAudioContext()
   if (!ctx) return
 
+  // S'assurer que le contexte est actif
+  if (ctx.state === 'suspended') {
+    ctx.resume().catch(() => {})
+  }
+
   try {
     const now = ctx.currentTime
 
-    // Volume général maîtrisé
+    // Volume général bien audible sur haut-parleur mobile
     const masterGain = ctx.createGain()
-    masterGain.gain.setValueAtTime(0.24, now)
-    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.25)
+    masterGain.gain.setValueAtTime(0.4, now)
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.35)
     masterGain.connect(ctx.destination)
 
     // 1. Voix "cloo" (onde sinusoïdale chaude avec glissando descendant)
     const osc1 = ctx.createOscillator()
     osc1.type = 'sine'
-    osc1.frequency.setValueAtTime(560, now)
+    osc1.frequency.setValueAtTime(580, now)
     osc1.frequency.exponentialRampToValueAtTime(440, now + 0.16)
 
     const gain1 = ctx.createGain()
     gain1.gain.setValueAtTime(0.001, now)
-    gain1.gain.linearRampToValueAtTime(0.7, now + 0.035)
+    gain1.gain.linearRampToValueAtTime(0.85, now + 0.035)
     gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.45)
     osc1.connect(gain1)
     gain1.connect(masterGain)
@@ -63,8 +87,8 @@ export function playMagicChime() {
     const gain2 = ctx.createGain()
     gain2.gain.setValueAtTime(0.001, now)
     gain2.gain.setValueAtTime(0.001, now + 0.06)
-    gain2.gain.linearRampToValueAtTime(0.45, now + 0.15)
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.2)
+    gain2.gain.linearRampToValueAtTime(0.55, now + 0.15)
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.25)
     osc2.connect(gain2)
     gain2.connect(masterGain)
 
@@ -77,8 +101,8 @@ export function playMagicChime() {
     const gain3 = ctx.createGain()
     gain3.gain.setValueAtTime(0.001, now)
     gain3.gain.setValueAtTime(0.001, now + 0.04)
-    gain3.gain.linearRampToValueAtTime(0.2, now + 0.1)
-    gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.8)
+    gain3.gain.linearRampToValueAtTime(0.25, now + 0.1)
+    gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.85)
     osc3.connect(gain3)
     gain3.connect(masterGain)
 
@@ -86,10 +110,10 @@ export function playMagicChime() {
     osc1.stop(now + 0.5)
 
     osc2.start(now + 0.06)
-    osc2.stop(now + 1.25)
+    osc2.stop(now + 1.35)
 
     osc3.start(now + 0.04)
-    osc3.stop(now + 0.85)
+    osc3.stop(now + 0.9)
   } catch (e) {
     console.warn('Audio chime play warning:', e)
   }

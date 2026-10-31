@@ -5,25 +5,50 @@ import type { AuthSession, ConversationMessage } from '../types'
 import { playMagicChime } from '../utils/audioChime'
 import { showWebPushNotification } from '../utils/webPush'
 
+const STORAGE_KEY = 'colcampus_last_seen_msg_ids'
+
+function getStoredMessageMap(): Record<number, number> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveStoredMessageMap(map: Record<number, number>) {
+  if (typeof window === 'undefined') return
+  try {
+    const json = JSON.stringify(map)
+    sessionStorage.setItem(STORAGE_KEY, json)
+    localStorage.setItem(STORAGE_KEY, json)
+  } catch {
+    // ignore
+  }
+}
+
+// Mémoire globale au module partagée entre tous les composants
+let memoryKnownMessageIds: Record<number, number> = getStoredMessageMap()
+let hasCompletedInitialScan = Object.keys(memoryKnownMessageIds).length > 0
+
 export function useMessengerUnread(session: AuthSession | null) {
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const unreadConvIdsRef = useRef<Set<number>>(new Set())
-  const lastKnownMessageIdByConvRef = useRef<Map<number, number>>(new Map())
-  const initialScanDoneRef = useRef(false)
 
   const sessionToken = session?.token
   const userId = session?.user?.id
 
-  // Déclenchement de la notification push pour un nouveau message
+  // Déclenchement de la notification push et du son magique pour un nouveau message réel
   const notifyIncomingMessage = useCallback(
     (conv: any, message: ConversationMessage) => {
       // Ignorer ses propres messages
       if (!message || message.user_id === userId) return
 
-      // 1. Jouer le carillon magique "cloohummmm"
+      // 1. Jouer immédiatement le son magique "cloohummmm"
       playMagicChime()
 
-      // 2. Déclencher la notification Push en haut de l'écran Android
+      // 2. Déclencher la notification Push système en haut de l'écran Android
       const partner =
         conv.sender_id === userId ? conv.receiver : conv.sender
       const partnerName =
@@ -38,7 +63,7 @@ export function useMessengerUnread(session: AuthSession | null) {
         title: `${partnerName} sur ColCampus`,
         body: preview,
         icon: partner?.photo_profil || '/assets/images/logo_colcampus_icon.png',
-        tag: conv.id ? `colcampus-conv-${conv.id}` : 'colcampus-chat',
+        tag: `colcampus-msg-${conv.id || 'chat'}`,
         onClick: () => {
           window.dispatchEvent(new CustomEvent('open-messenger'))
           window.dispatchEvent(
@@ -53,10 +78,8 @@ export function useMessengerUnread(session: AuthSession | null) {
   )
 
   const refreshUnreadCount = useCallback(async () => {
-    if (!sessionToken) {
+    if (!sessionToken || !userId) {
       unreadConvIdsRef.current.clear()
-      lastKnownMessageIdByConvRef.current.clear()
-      initialScanDoneRef.current = false
       setUnreadCount(0)
       return
     }
@@ -74,6 +97,9 @@ export function useMessengerUnread(session: AuthSession | null) {
         unreadConvIdsRef.current = newSet
         setUnreadCount(newSet.size)
 
+        const currentMap = { ...memoryKnownMessageIds }
+        let hasNewNotification = false
+
         // 2. Détection en temps réel des NOUVEAUX messages réels
         conversations.forEach((d) => {
           const conv = d.conversation
@@ -81,21 +107,31 @@ export function useMessengerUnread(session: AuthSession | null) {
 
           if (!conv || !lastMsg || !lastMsg.id) return
 
-          const prevLastId = lastKnownMessageIdByConvRef.current.get(conv.id)
+          const convId = Number(conv.id)
+          const lastMsgId = Number(lastMsg.id)
+          const prevLastId = currentMap[convId]
 
-          // Si le scan initial est déjà passé et qu'un nouveau message arrive
-          if (initialScanDoneRef.current) {
-            if (prevLastId === undefined || lastMsg.id > prevLastId) {
-              lastKnownMessageIdByConvRef.current.set(conv.id, lastMsg.id)
+          if (hasCompletedInitialScan) {
+            // Si le message a un ID plus récent et provient de l'interlocuteur
+            if (prevLastId === undefined || lastMsgId > prevLastId) {
+              currentMap[convId] = lastMsgId
+              hasNewNotification = true
               notifyIncomingMessage(conv, lastMsg)
             }
           } else {
-            // Premier scan : on mémorise simplement l'ID actuel pour ne pas notifier les anciens messages
-            lastKnownMessageIdByConvRef.current.set(conv.id, lastMsg.id)
+            // Premier scan : on mémorise les IDs existants pour ne pas notifier les anciens messages
+            currentMap[convId] = lastMsgId
           }
         })
 
-        initialScanDoneRef.current = true
+        memoryKnownMessageIds = currentMap
+        saveStoredMessageMap(currentMap)
+        hasCompletedInitialScan = true
+
+        if (hasNewNotification) {
+          // Émettre un événement personnalisé pour notifier l'UI si nécessaire
+          window.dispatchEvent(new CustomEvent('colcampus:new-message-received'))
+        }
       } else if (typeof res.data?.unread_messages_count === 'number') {
         setUnreadCount(res.data.unread_messages_count)
       } else {
@@ -104,39 +140,27 @@ export function useMessengerUnread(session: AuthSession | null) {
     } catch {
       // silent fallback
     }
-  }, [sessionToken, notifyIncomingMessage])
+  }, [sessionToken, userId, notifyIncomingMessage])
 
-  // Initial fetch on session change
-  useEffect(() => {
-    if (sessionToken) {
-      void refreshUnreadCount()
-    } else {
-      unreadConvIdsRef.current.clear()
-      lastKnownMessageIdByConvRef.current.clear()
-      initialScanDoneRef.current = false
-      setUnreadCount(0)
-    }
-  }, [sessionToken, refreshUnreadCount])
-
-  // Polling temps réel (toutes les 4 secondes) + écoute WebSocket Reverb si disponible
+  // Polling temps réel toutes les 3.5 secondes
   useEffect(() => {
     if (!userId || !sessionToken) return
 
-    // 1. Polling périodique toutes les 4s pour garantir la réception instantanée
-    // même lorsque le serveur fonctionne en broadcast log
+    // Premier chargement immédiat
+    void refreshUnreadCount()
+
+    // Polling régulier
     const pollInterval = setInterval(() => {
       void refreshUnreadCount()
-    }, 4000)
+    }, 3500)
 
-    // 2. Détection immédiate lors du réveil du téléphone ou retour sur l'onglet
+    // Détection immédiate lors du réveil du téléphone ou retour sur l'onglet
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        void refreshUnreadCount()
-      }
+      void refreshUnreadCount()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // 3. Écoute Echo WebSocket au cas où Reverb est actif
+    // Écoute Echo WebSocket au cas où Reverb est actif
     const channel = echo.private(`users.${userId}`)
 
     const handleMessageSent = (data?: {
@@ -144,10 +168,10 @@ export function useMessengerUnread(session: AuthSession | null) {
       message?: ConversationMessage
     }) => {
       if (data?.conversation && data?.message) {
-        lastKnownMessageIdByConvRef.current.set(
-          data.conversation.id,
-          data.message.id
-        )
+        const convId = Number(data.conversation.id)
+        const msgId = Number(data.message.id)
+        memoryKnownMessageIds[convId] = msgId
+        saveStoredMessageMap(memoryKnownMessageIds)
         notifyIncomingMessage(data.conversation, data.message)
       }
       void refreshUnreadCount()

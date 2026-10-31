@@ -47,6 +47,12 @@ import {
 } from './services/session'
 import type { AuthSession } from './types'
 import { getDashboardPath } from './utils/auth'
+import { useMessengerUnread } from './hooks/useMessengerUnread'
+
+function GlobalMessengerWatcher({ session }: { session: AuthSession | null }) {
+  useMessengerUnread(session)
+  return null
+}
 
 const DEFAULT_FILTERS: ExplorerFilters = {
   category: 'ALL',
@@ -287,6 +293,7 @@ export default function App() {
   return (
     <div className="app-root">
       <Preloader />
+      <GlobalMessengerWatcher session={session} />
 
       {usesSiteLayout ? (
         <SiteHeader route={route} session={session} onLogout={handleLogout} isLoggingOut={isLoggingOut} />

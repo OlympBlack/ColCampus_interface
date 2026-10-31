@@ -85,7 +85,7 @@ export async function showWebPushNotification({
   // Vibration haptique sur mobile
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try {
-      navigator.vibrate([200, 100, 200])
+      navigator.vibrate([300, 150, 300, 150, 350])
     } catch {
       // ignore
     }
@@ -95,14 +95,15 @@ export async function showWebPushNotification({
     body,
     icon,
     badge: '/assets/images/logo_colcampus_icon.png',
-    tag: tag || 'colcampus-message',
+    tag: `${tag || 'colcampus-message'}-${Date.now()}`,
     data: {
       url: window.location.href,
       conversationId: data?.conversationId,
       ...data,
     },
-    vibrate: [200, 100, 200],
+    vibrate: [300, 150, 300, 150, 350],
     renotify: true,
+    silent: false,
   }
 
   // 1. Sur Mobile Android Chrome, le Service Worker est INDISPENSABLE
