@@ -3,34 +3,54 @@ import { echo } from '../lib/echo'
 import { fetchDashboard } from '../services/api'
 import type { AuthSession, ConversationMessage } from '../types'
 import { playMagicChime } from '../utils/audioChime'
-import { showWebPushNotification } from '../utils/webPush'
+import { getActiveConversationId } from '../utils/notificationState'
+import {
+  ensurePushSubscription,
+  isPushSubscriptionActive,
+  showWebPushNotification,
+} from '../utils/webPush'
 
-const STORAGE_KEY = 'colcampus_last_seen_msg_ids'
+const STORAGE_KEY_PREFIX = 'colcampus_last_seen_msg_ids'
 
-function getStoredMessageMap(): Record<number, number> {
+function getStorageKey(userId: number) {
+  return `${STORAGE_KEY_PREFIX}_${userId}`
+}
+
+function getStoredMessageMap(userId: number): Record<number, number> {
   if (typeof window === 'undefined') return {}
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY)
+    const key = getStorageKey(userId)
+    const raw = sessionStorage.getItem(key) || localStorage.getItem(key)
     return raw ? JSON.parse(raw) : {}
   } catch {
     return {}
   }
 }
 
-function saveStoredMessageMap(map: Record<number, number>) {
+function saveStoredMessageMap(userId: number, map: Record<number, number>) {
   if (typeof window === 'undefined') return
   try {
+    const key = getStorageKey(userId)
     const json = JSON.stringify(map)
-    sessionStorage.setItem(STORAGE_KEY, json)
-    localStorage.setItem(STORAGE_KEY, json)
+    sessionStorage.setItem(key, json)
+    localStorage.setItem(key, json)
   } catch {
     // ignore
   }
 }
 
 // Mémoire globale au module partagée entre tous les composants
-let memoryKnownMessageIds: Record<number, number> = getStoredMessageMap()
-let hasCompletedInitialScan = Object.keys(memoryKnownMessageIds).length > 0
+let memoryKnownMessageIds: Record<number, number> = {}
+let memoryKnownUserId: number | null = null
+let hasCompletedInitialScan = false
+
+function loadKnownMessages(userId: number) {
+  if (memoryKnownUserId === userId) return
+
+  memoryKnownUserId = userId
+  memoryKnownMessageIds = getStoredMessageMap(userId)
+  hasCompletedInitialScan = Object.keys(memoryKnownMessageIds).length > 0
+}
 
 export function useMessengerUnread(session: AuthSession | null) {
   const [unreadCount, setUnreadCount] = useState<number>(0)
@@ -45,10 +65,17 @@ export function useMessengerUnread(session: AuthSession | null) {
       // Ignorer ses propres messages
       if (!message || message.user_id === userId) return
 
-      // 1. Jouer immédiatement le son magique "cloohummmm"
+      // La conversation ouverte gère elle-même le son et le marquage comme lu.
+      if (getActiveConversationId() === Number(conv.id)) return
+
+      // 1. Son de notification, même si l'utilisateur n'est pas dans le chat
       playMagicChime()
 
-      // 2. Déclencher la notification Push système en haut de l'écran Android
+      // 2. En arrière-plan : vraie notification Push si le serveur peut la
+      //    délivrer, sinon repli local via le Service Worker.
+      if (typeof document !== 'undefined' && !document.hidden) return
+      if (isPushSubscriptionActive()) return
+
       const partner =
         conv.sender_id === userId ? conv.receiver : conv.sender
       const partnerName =
@@ -64,6 +91,7 @@ export function useMessengerUnread(session: AuthSession | null) {
         body: preview,
         icon: partner?.photo_profil || '/assets/images/logo_colcampus_icon.png',
         tag: `colcampus-msg-${conv.id || 'chat'}`,
+        data: { conversationId: conv.id },
         onClick: () => {
           window.dispatchEvent(new CustomEvent('open-messenger'))
           window.dispatchEvent(
@@ -85,6 +113,7 @@ export function useMessengerUnread(session: AuthSession | null) {
     }
 
     try {
+      loadKnownMessages(userId)
       const res = await fetchDashboard(sessionToken)
       const conversations = res.data?.mes_conversations
 
@@ -125,7 +154,7 @@ export function useMessengerUnread(session: AuthSession | null) {
         })
 
         memoryKnownMessageIds = currentMap
-        saveStoredMessageMap(currentMap)
+        saveStoredMessageMap(userId, currentMap)
         hasCompletedInitialScan = true
 
         if (hasNewNotification) {
@@ -146,6 +175,11 @@ export function useMessengerUnread(session: AuthSession | null) {
   useEffect(() => {
     if (!userId || !sessionToken) return
 
+    loadKnownMessages(userId)
+
+    // Renouvelle silencieusement l'abonnement Push si la permission est déjà accordée.
+    void ensurePushSubscription(sessionToken)
+
     // Premier chargement immédiat
     void refreshUnreadCount()
 
@@ -156,6 +190,9 @@ export function useMessengerUnread(session: AuthSession | null) {
 
     // Détection immédiate lors du réveil du téléphone ou retour sur l'onglet
     const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void ensurePushSubscription(sessionToken)
+      }
       void refreshUnreadCount()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -168,10 +205,11 @@ export function useMessengerUnread(session: AuthSession | null) {
       message?: ConversationMessage
     }) => {
       if (data?.conversation && data?.message) {
+        loadKnownMessages(userId)
         const convId = Number(data.conversation.id)
         const msgId = Number(data.message.id)
         memoryKnownMessageIds[convId] = msgId
-        saveStoredMessageMap(memoryKnownMessageIds)
+        saveStoredMessageMap(userId, memoryKnownMessageIds)
         notifyIncomingMessage(data.conversation, data.message)
       }
       void refreshUnreadCount()

@@ -458,6 +458,36 @@ export async function fetchNotifications(token: string) {
   })
 }
 
+export interface PushSubscriptionPayload {
+  endpoint: string
+  keys: {
+    p256dh: string
+    auth: string
+  }
+  content_encoding?: string
+  user_agent?: string
+}
+
+export async function fetchPushPublicKey() {
+  return requestJson<{ public_key: string | null }>('/push/public-key')
+}
+
+export async function savePushSubscription(token: string, payload: PushSubscriptionPayload) {
+  return requestJson<{ message: string; data: { id: number } }>('/push/subscriptions', {
+    method: 'POST',
+    headers: withAuthHeaders(token, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deletePushSubscription(token: string, endpoint: string) {
+  return requestJson<MessageResponse>('/push/subscriptions', {
+    method: 'DELETE',
+    headers: withAuthHeaders(token, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ endpoint }),
+  })
+}
+
 export async function fetchAnnouncementConversation(token: string, annonceId: number) {
   return requestJson<{ data: ConversationThreadData }>(`/annonces/${annonceId}/messages`, {
     headers: withAuthHeaders(token),

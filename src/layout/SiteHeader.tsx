@@ -7,7 +7,7 @@ import { MessengerPopover } from '../components/MessengerPopover'
 import { NotificationPopover } from '../components/NotificationPopover'
 import type { AuthSession, AuthUser } from '../types'
 import { getDashboardPath, getRoleLabel } from '../utils/auth'
-import { requestPushPermission } from '../utils/webPush'
+import { subscribeToWebPush } from '../utils/webPush'
 
 function getUserInitials(name?: string | null, prenoms?: string | null): string {
   const p = (prenoms || '').trim()
@@ -508,7 +508,7 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
                     isOpen={activePopover === 'messenger'}
                     unreadCount={messengerUnreadCount}
                     onClick={() => {
-                      requestPushPermission().catch(() => {})
+                      if (session?.token) subscribeToWebPush(session.token).catch(() => {})
                       if (isMenuOpen) closeMenu()
                       setActivePopover((prev) => (prev === 'messenger' ? null : 'messenger'))
                     }}
@@ -662,7 +662,7 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
                         isOpen={activePopover === 'messenger'}
                         unreadCount={messengerUnreadCount}
                         onClick={() => {
-                          requestPushPermission().catch(() => {})
+                          if (session?.token) subscribeToWebPush(session.token).catch(() => {})
                           setActivePopover((prev) => (prev === 'messenger' ? null : 'messenger'))
                         }}
                       />

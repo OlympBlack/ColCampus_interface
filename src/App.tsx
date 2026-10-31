@@ -48,6 +48,7 @@ import {
 import type { AuthSession } from './types'
 import { getDashboardPath } from './utils/auth'
 import { useMessengerUnread } from './hooks/useMessengerUnread'
+import { unsubscribeFromWebPush } from './utils/webPush'
 
 function GlobalMessengerWatcher({ session }: { session: AuthSession | null }) {
   useMessengerUnread(session)
@@ -154,6 +155,45 @@ export default function App() {
     }
   }, [route, session, hasDismissedProfilePrompt])
 
+  // Ouverture d'une conversation depuis une notification Push
+  // (le Service Worker ouvre /#/?conversation=ID).
+  useEffect(() => {
+    if (!session) return
+
+    const hash = window.location.hash || ''
+    const queryIndex = hash.indexOf('?')
+    if (queryIndex === -1) return
+
+    const params = new URLSearchParams(hash.slice(queryIndex + 1))
+    const conversationId = Number(params.get('conversation'))
+    if (!Number.isFinite(conversationId) || conversationId <= 0) return
+
+    const requiresSiteLayout =
+      route.name === 'dashboard' ||
+      route.name === 'profile' ||
+      route.name === 'publish' ||
+      route.name === 'forfaits'
+
+    if (requiresSiteLayout) {
+      window.location.hash = `#/?conversation=${conversationId}`
+      return
+    }
+
+    const cleanHash = hash.slice(0, queryIndex) || '#/'
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}${window.location.search}${cleanHash}`
+    )
+
+    window.dispatchEvent(new CustomEvent('open-messenger'))
+    window.dispatchEvent(
+      new CustomEvent('colcampus:open-chat', {
+        detail: { conversationId },
+      })
+    )
+  }, [session, route])
+
   useEffect(() => {
     if (!session?.token) return
 
@@ -230,6 +270,12 @@ export default function App() {
     setIsLoggingOut(true)
 
     try {
+      await unsubscribeFromWebPush(session.token)
+    } catch {
+      // La session sera fermée même si le désabonnement échoue.
+    }
+
+    try {
       await logoutUser(session.token)
       pushToast({
         tone: 'success',
@@ -253,6 +299,12 @@ export default function App() {
 
   const handleInactivityTimeout = useCallback(async () => {
     if (!session) return
+
+    try {
+      await unsubscribeFromWebPush(session.token)
+    } catch {
+      // La session sera fermée même si le désabonnement échoue.
+    }
 
     try {
       await logoutUser(session.token)

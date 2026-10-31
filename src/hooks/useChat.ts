@@ -6,6 +6,7 @@ import {
     markConversationAsRead,
 } from '../services/api'
 import { playMagicChime } from '../utils/audioChime'
+import { setActiveConversationId } from '../utils/notificationState'
 import { showWebPushNotification } from '../utils/webPush'
 import type {
     AuthSession,
@@ -30,12 +31,23 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
     // Update local discussions if initials change (e.g. from global dashboard refresh)
     useEffect(() => {
         setDiscussions(() => {
-            if (activeConversation && !initialDiscussions.some(d => d.conversation.id === activeConversation.id)) {
+            const partnerId = activeConversation
+                ? (activeConversation.sender_id === session.user.id ? activeConversation.receiver_id : activeConversation.sender_id)
+                : null
+
+            const exists = initialDiscussions.some(d => {
+                if (d.conversation.id === activeConversation?.id) return true
+                if (!partnerId) return false
+                const pId = d.conversation.sender_id === session.user.id ? d.conversation.receiver_id : d.conversation.sender_id
+                return pId === partnerId
+            })
+
+            if (activeConversation && !exists) {
                 return [{ conversation: activeConversation, last_message: null }, ...initialDiscussions]
             }
             return initialDiscussions
         })
-    }, [initialDiscussions, activeConversation])
+    }, [initialDiscussions, activeConversation, session.user.id])
 
     const loadMessages = useCallback(async (conversationId: number) => {
         setLoading(true)
@@ -63,12 +75,22 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
     const openConversation = useCallback((conv: ConversationThreadInfo) => {
         setActiveConversation(conv)
         setDiscussions(prev => {
-            const exists = prev.some(d => d.conversation.id === conv.id)
-            if (exists) return prev
+            const partnerId = conv.sender_id === session.user.id ? conv.receiver_id : conv.sender_id
+            const existsIndex = prev.findIndex(d => {
+                if (d.conversation.id === conv.id) return true
+                const pId = d.conversation.sender_id === session.user.id ? d.conversation.receiver_id : d.conversation.sender_id
+                return pId === partnerId
+            })
+
+            if (existsIndex >= 0) {
+                const updated = [...prev]
+                updated[existsIndex] = { ...updated[existsIndex], conversation: conv }
+                return updated
+            }
             return [{ conversation: conv, last_message: null }, ...prev]
         })
         void loadMessages(conv.id)
-    }, [loadMessages])
+    }, [loadMessages, session.user.id])
 
     useEffect(() => {
         if (activeConversation && activeConversation.id !== loadedConvIdRef.current) {
@@ -76,6 +98,13 @@ export function useChat(session: AuthSession, initialDiscussions: { conversation
             void loadMessages(activeConversation.id)
         }
     }, [activeConversation?.id, loadMessages])
+
+    // Indique au veilleur global quelle conversation est ouverte pour éviter
+    // de doubler le son / la notification.
+    useEffect(() => {
+        setActiveConversationId(activeConversation?.id ?? null)
+        return () => setActiveConversationId(null)
+    }, [activeConversation?.id])
 
     // Polling de synchronisation temps réel de la conversation active
     useEffect(() => {

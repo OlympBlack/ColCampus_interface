@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import type { AuthSession, ConversationThreadInfo, ConversationMessage } from '../types'
 import { UiIcon } from './UiIcons'
@@ -6,7 +6,12 @@ import { useChat } from '../hooks/useChat'
 import { fetchDashboard } from '../services/api'
 import { AudioMessagePlayer } from './AudioMessagePlayer'
 import { AudioVoiceRecorder } from './AudioVoiceRecorder'
-import { requestPushPermission, showWebPushNotification } from '../utils/webPush'
+import {
+  hasActivePushSubscription,
+  requestPushPermission,
+  showWebPushNotification,
+  subscribeToWebPush,
+} from '../utils/webPush'
 import { playMagicChime } from '../utils/audioChime'
 
 export interface MessengerPopoverProps {
@@ -113,25 +118,36 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     return 'denied'
   })
   const [pushTestSuccess, setPushTestSuccess] = useState(false)
+  const [pushSubscribed, setPushSubscribed] = useState(false)
 
-  // Met à jour la permission si l'utilisateur change les réglages
+  // Met à jour la permission et l'abonnement Push à chaque ouverture
   useEffect(() => {
+    if (!isOpen) return
+
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setPushPermission(Notification.permission)
     }
-  }, [isOpen])
+
+    void hasActivePushSubscription().then(setPushSubscribed)
+
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      void subscribeToWebPush(session.token).then(setPushSubscribed)
+    }
+  }, [isOpen, session.token])
 
   const handleEnablePush = async () => {
-    const granted = await requestPushPermission()
+    const granted = await subscribeToWebPush(session.token)
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setPushPermission(Notification.permission)
     }
+    setPushSubscribed(granted)
     if (granted) {
       playMagicChime()
       await showWebPushNotification({
         title: 'ColCampus Messagerie',
-        body: '🎉 Notifications activées avec succès sur votre téléphone !',
+        body: '🎉 Notifications activées : vous serez alerté même dans une autre application.',
         icon: '/assets/images/logo_colcampus_icon.png',
+        force: true,
       })
       setPushTestSuccess(true)
       setTimeout(() => setPushTestSuccess(false), 5000)
@@ -144,13 +160,37 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
       title: 'ColCampus Messagerie',
       body: '🔔 Test : Vos notifications en haut du téléphone fonctionnent parfaitement !',
       icon: '/assets/images/logo_colcampus_icon.png',
+      force: true,
     })
     setPushTestSuccess(true)
     setTimeout(() => setPushTestSuccess(false), 5000)
   }
 
   const renderPushBanner = () => {
-    if (pushPermission === 'granted') {
+    if (pushPermission === 'denied') {
+      return (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 14px',
+            background: '#fef2f2',
+            borderBottom: '1px solid #fecaca',
+            fontSize: '11.5px',
+            color: '#991b1b',
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ lineHeight: 1.3 }}>
+            🔕 Notifications bloquées. Autorisez ColCampus dans les réglages de votre navigateur
+            (Site settings → Notifications) pour recevoir les alertes.
+          </span>
+        </div>
+      )
+    }
+
+    if (pushPermission === 'granted' && pushSubscribed) {
       return (
         <div
           style={{
@@ -207,7 +247,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
         }}
       >
         <span style={{ lineHeight: 1.3 }}>
-          🔔 <strong>Notifications du téléphone</strong> : activez pour être alerté en haut de l'écran.
+          🔔 <strong>Notifications du téléphone</strong> : activez pour être alerté même dans une autre application.
         </span>
         <button
           type="button"
@@ -422,15 +462,21 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     }
   }, [isOpen, setActiveConversation])
 
+  const pendingConversationIdRef = useRef<number | null>(null)
+
   useEffect(() => {
     const handleOpenSpecificChat = (e: Event) => {
       const customEvent = e as CustomEvent<{ conversationId?: number }>
       const convId = customEvent.detail?.conversationId
-      if (convId && discussions.length > 0) {
-        const found = discussions.find(d => d.conversation.id === convId)
-        if (found) {
-          setActiveConversation(found.conversation)
-        }
+      if (!convId) return
+
+      const found = discussions.find(d => d.conversation.id === convId)
+      if (found) {
+        pendingConversationIdRef.current = null
+        setActiveConversation(found.conversation)
+      } else {
+        // Les discussions ne sont pas encore chargées : on les attend.
+        pendingConversationIdRef.current = convId
       }
     }
     window.addEventListener('colcampus:open-chat', handleOpenSpecificChat)
@@ -438,11 +484,40 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
   }, [discussions, setActiveConversation])
 
   useEffect(() => {
+    const pendingId = pendingConversationIdRef.current
+    if (!pendingId || discussions.length === 0) return
+
+    const found = discussions.find(d => d.conversation.id === pendingId)
+    if (found) {
+      pendingConversationIdRef.current = null
+      setActiveConversation(found.conversation)
+    }
+  }, [discussions, setActiveConversation])
+
+  useEffect(() => {
     setIsRecordingAudio(false)
     setSendError(null)
   }, [activeConversation?.id])
 
-  const filteredDiscussions = discussions.filter(d => {
+  const uniqueDiscussions = useMemo(() => {
+    const seen = new Set<number>()
+    const list: typeof discussions = []
+    for (const d of discussions) {
+      const partner = d.conversation.sender_id === session.user.id ? d.conversation.receiver : d.conversation.sender
+      const partnerId = partner?.id
+      if (partnerId) {
+        if (!seen.has(partnerId)) {
+          seen.add(partnerId)
+          list.push(d)
+        }
+      } else {
+        list.push(d)
+      }
+    }
+    return list
+  }, [discussions, session.user.id])
+
+  const filteredDiscussions = uniqueDiscussions.filter(d => {
     const partner = d.conversation.sender_id === session.user.id ? d.conversation.receiver : d.conversation.sender
     const partnerName = `${partner?.prenoms || ''} ${partner?.name || ''}`.toLowerCase()
     const annonceTitre = d.conversation.annonce?.titre?.toLowerCase() ?? ''
@@ -687,7 +762,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
                   </div>
                   <span className="colcampus-story-name">Votre note</span>
                 </div>
-                {discussions.slice(0, 8).map(d => {
+                {uniqueDiscussions.slice(0, 8).map(d => {
                   const partner = d.conversation.sender_id === session.user.id ? d.conversation.receiver : d.conversation.sender
                   const isOnline = partner?.id ? onlineUsers.includes(partner.id) : false
                   return (
