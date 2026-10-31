@@ -39,8 +39,8 @@ export function ContactPage({ session, onToast }: ContactPageProps) {
 
   const { settings } = usePlatformSettings()
   const displayTelephone = settings.telephone || '+229 01 54 47 00 02'
-  const displayEmailContact = settings.email_contact || 'contact@coletubenin.com'
-  const displayEmailSupport = settings.email_support || 'support@coletubenin.com'
+  const displayEmailContact = settings.email_contact || 'contact@coletubenin.lavoixdabouloussi.org'
+  const displayEmailSupport = settings.email_support || 'contact@coletubenin.lavoixdabouloussi.org'
   const displayLocalisation = settings.campus_localisation || 'Campus du Bénin • Abomey-Calavi, Cotonou, Parakou, Abomey, Porto-Novo'
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

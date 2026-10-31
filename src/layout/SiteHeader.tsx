@@ -439,8 +439,8 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
           <div className="d-flex align-items-center justify-content-between w-100 flex-wrap">
             <ul className="left-info d-flex flex-wrap align-items-center m-0 p-0" style={{ gap: '18px', listStyle: 'none' }}>
               <li>
-                <a href={`mailto:${settings?.email_contact || 'contact@colcampus.com'}`}>
-                  <i className="fa fa-envelope"></i> {settings?.email_contact || 'contact@colcampus.com'}
+                <a href={`mailto:${settings?.email_contact || 'contact@coletubenin.lavoixdabouloussi.org'}`}>
+                  <i className="fa fa-envelope"></i> {settings?.email_contact || 'contact@coletubenin.lavoixdabouloussi.org'}
                 </a>
               </li>
               <li>
