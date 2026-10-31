@@ -608,7 +608,7 @@ header.header-solid-page .header-user-name {
 }
 
 .header-brand-wrap h2 {
-  margin-left: -5px !important;
+  margin-left: -2px !important;
 }
 
 .header-brand-logo {
@@ -627,7 +627,7 @@ header.header-solid-page .header-user-name {
     gap: 0;
   }
   .header-brand-wrap h2 {
-    margin-left: -4px !important;
+    margin-left: -1px !important;
   }
 }
 
