@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { usePlatformSettings } from '../hooks/usePlatformSettings'
 import { submitContactMessage } from '../services/api'
+import { PwaInstallButton } from '../components/PwaInstallPrompt'
 
 export function SiteFooter() {
   const { settings } = usePlatformSettings()
@@ -63,6 +64,12 @@ export function SiteFooter() {
                   </a>
                 </li>
               </ul>
+              <div style={{ marginTop: '18px' }}>
+                <PwaInstallButton
+                  label="Installer sur votre appareil"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.2)' }}
+                />
+              </div>
             </div>
 
             <div className="col-md-3 footer-item">

@@ -8,6 +8,7 @@ import { NotificationPopover } from '../components/NotificationPopover'
 import type { AuthSession, AuthUser } from '../types'
 import { getDashboardPath, getRoleLabel } from '../utils/auth'
 import { subscribeToWebPush } from '../utils/webPush'
+import { PwaInstallButton } from '../components/PwaInstallPrompt'
 
 function getUserInitials(name?: string | null, prenoms?: string | null): string {
   const p = (prenoms || '').trim()
@@ -651,6 +652,14 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
                   <a className="nav-link" href="#/contact" onClick={closeMenu}>
                     <span>Contact</span>
                   </a>
+                </li>
+                <li className="nav-item d-lg-none my-2">
+                  <div style={{ padding: '4px 15px' }}>
+                    <PwaInstallButton
+                      style={{ width: '100%', justifyContent: 'center', padding: '10px 16px' }}
+                      label="Installer l'application sur ce téléphone"
+                    />
+                  </div>
                 </li>
               </ul>
 

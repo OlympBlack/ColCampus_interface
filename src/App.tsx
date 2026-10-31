@@ -3,6 +3,7 @@ import { FilterDrawer, type ExplorerFilters } from './components/FilterDrawer'
 import { ToastViewport, type ToastDraft, type ToastItem } from './components/ToastViewport'
 import { CookieBanner } from './components/CookieBanner'
 import { ProfileCompletionModal } from './components/ProfileCompletionModal'
+import { PwaInstallPrompt } from './components/PwaInstallPrompt'
 import { Preloader } from './layout/Preloader'
 import { SiteFooter } from './layout/SiteFooter'
 import { SiteHeader } from './layout/SiteHeader'
@@ -429,6 +430,7 @@ export default function App() {
       {usesSiteLayout ? <SiteFooter /> : null}
 
       <CookieBanner />
+      <PwaInstallPrompt />
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />
 
       <ProfileCompletionModal

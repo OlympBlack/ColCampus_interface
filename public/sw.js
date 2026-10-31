@@ -1,14 +1,102 @@
-// ColCampus Service Worker : notifications Push système
-const DEFAULT_ICON = '/assets/images/logo_colcampus_icon.png'
+// ColCampus Service Worker : PWA + Notifications Push système
+const CACHE_NAME = 'colcampus-pwa-v1'
+const DEFAULT_ICON = '/icons/icon-192x192.png'
+
+// Ressources clés mises en cache dès l'installation
+const PRECACHE_URLS = [
+  '/',
+  '/manifest.json',
+  '/favicon.svg',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/apple-touch-icon.png'
+]
 
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE_URLS).catch((err) => {
+        console.warn('PWA Precache warning:', err)
+      })
+    })
+  )
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    Promise.all([
+      // Nettoyage des anciens caches
+      caches.keys().then((keys) => {
+        return Promise.all(
+          keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        )
+      }),
+      self.clients.claim()
+    ])
+  )
 })
 
+// Stratégie Fetch pour la PWA
+self.addEventListener('fetch', (event) => {
+  const req = event.request
+  const url = new URL(req.url)
+
+  // Ignorer requêtes non-GET et requêtes externes non-HTTP(S)
+  if (req.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return
+  }
+
+  // Ne JAMAIS intercepter en cache-first les requêtes API pour garantir la fraîcheur
+  if (url.pathname.startsWith('/api') || url.pathname.includes('/sanctum/')) {
+    return
+  }
+
+  // Requêtes de navigation (pages HTML) : Network-First avec fallback vers index.html en cache
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req).catch(() => {
+        return caches.match('/') || caches.match('/index.html')
+      })
+    )
+    return
+  }
+
+  // Assets statiques (scripts, styles, polices, images) : Stale-While-Revalidate
+  if (
+    url.origin === self.location.origin &&
+    (url.pathname.startsWith('/assets/') ||
+     url.pathname.startsWith('/icons/') ||
+     url.pathname.startsWith('/vendor/') ||
+     url.pathname.endsWith('.js') ||
+     url.pathname.endsWith('.css') ||
+     url.pathname.endsWith('.svg') ||
+     url.pathname.endsWith('.png') ||
+     url.pathname.endsWith('.jpg') ||
+     url.pathname.endsWith('.woff2'))
+  ) {
+    event.respondWith(
+      caches.match(req).then((cachedResponse) => {
+        const fetchPromise = fetch(req)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const resClone = networkResponse.clone()
+              caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone))
+            }
+            return networkResponse
+          })
+          .catch(() => cachedResponse)
+
+        return cachedResponse || fetchPromise
+      })
+    )
+    return
+  }
+})
+
+/* =========================================================
+ * GESTION DES NOTIFICATIONS PUSH SYSTÈME
+ * ========================================================= */
 self.addEventListener('push', (event) => {
   let payload = {}
 
