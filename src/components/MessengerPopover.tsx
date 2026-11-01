@@ -117,7 +117,6 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     }
     return 'denied'
   })
-  const [pushTestSuccess, setPushTestSuccess] = useState(false)
   const [pushSubscribed, setPushSubscribed] = useState(false)
 
   // Met à jour la permission et l'abonnement Push à chaque ouverture
@@ -149,21 +148,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
         icon: '/assets/images/logo_colcampus_icon.png',
         force: true,
       })
-      setPushTestSuccess(true)
-      setTimeout(() => setPushTestSuccess(false), 5000)
     }
-  }
-
-  const handleTestPush = async () => {
-    playMagicChime()
-    await showWebPushNotification({
-      title: 'ColEtuBenin Messagerie',
-      body: '🔔 Test : Vos notifications en haut du téléphone fonctionnent parfaitement !',
-      icon: '/assets/images/logo_colcampus_icon.png',
-      force: true,
-    })
-    setPushTestSuccess(true)
-    setTimeout(() => setPushTestSuccess(false), 5000)
   }
 
   const renderPushBanner = () => {
@@ -191,8 +176,7 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
     }
 
     if (pushPermission === 'granted' && pushSubscribed) {
-      return (
-      )
+      return null
     }
 
     return (

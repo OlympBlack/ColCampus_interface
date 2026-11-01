@@ -183,10 +183,6 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
       setSignatureUrl(res.data.signature_url)
       setSignatureTexte(res.data.signature_texte)
       setCopyrightTexte(res.data.copyright_texte)
-      setKkiapayPublicKey(res.data.kkiapay_public_key || '')
-      setKkiapayPrivateKey(res.data.kkiapay_private_key || '')
-      setKkiapaySecretKey(res.data.kkiapay_secret_key || '')
-      setKkiapaySandbox(res.data.kkiapay_sandbox !== undefined ? Boolean(res.data.kkiapay_sandbox) : true)
       setLogoFile(null)
       setLogoPreview(null)
 
