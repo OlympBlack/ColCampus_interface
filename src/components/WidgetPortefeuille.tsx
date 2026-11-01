@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { CreditCard, History, PlusCircle } from 'lucide-react'
 import type { Portefeuille, TransactionCredit } from '../types'
-import { formatPrice } from '../utils/format'
 
 interface WidgetPortefeuilleProps {
   portefeuille: Portefeuille
@@ -117,7 +116,9 @@ export function WidgetPortefeuille({ portefeuille, onBuyMore, transactions }: Wi
                         </span>
                       </td>
                       <td>{transaction.description ?? '—'}</td>
-                      <td className="text-end fw-semibold">{formatPrice(transaction.montant)}</td>
+                      <td className={`text-end fw-bold ${transaction.montant > 0 ? 'text-success' : ''}`}>
+                        {transaction.montant > 0 ? `+${transaction.montant}` : transaction.montant} cr.
+                      </td>
                     </tr>
                   ))}
                 </tbody>

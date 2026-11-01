@@ -11,9 +11,14 @@ import {
   MessageCircle,
   ShieldCheck,
   Sparkles,
+  CreditCard,
+  Key,
+  Eye,
+  EyeOff,
+  HelpCircle,
 } from 'lucide-react'
 import {
-  fetchPlatformSettings,
+  fetchAdminPlatformSettings,
   updateAdminPlatformSettings,
   resetAdminPlatformSettings,
   type PlatformSettings,
@@ -46,6 +51,14 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
   const [signatureTexte, setSignatureTexte] = useState('')
   const [copyrightTexte, setCopyrightTexte] = useState('')
 
+  // Clés API de Paiement (Kkiapay / Mobile Money)
+  const [kkiapayPublicKey, setKkiapayPublicKey] = useState('')
+  const [kkiapayPrivateKey, setKkiapayPrivateKey] = useState('')
+  const [kkiapaySecretKey, setKkiapaySecretKey] = useState('')
+  const [kkiapaySandbox, setKkiapaySandbox] = useState(true)
+  const [showPrivateKey, setShowPrivateKey] = useState(false)
+  const [showSecretKey, setShowSecretKey] = useState(false)
+
   // Logo file upload state
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -54,7 +67,7 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
   const loadSettings = async () => {
     setIsLoading(true)
     try {
-      const data = await fetchPlatformSettings()
+      const data = await fetchAdminPlatformSettings(token)
       setNomPlateforme(data.nom_plateforme || '')
       setSlogan(data.slogan || '')
       setDescription(data.description || '')
@@ -68,6 +81,10 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
       setSignatureUrl(data.signature_url || '')
       setSignatureTexte(data.signature_texte || '')
       setCopyrightTexte(data.copyright_texte || '')
+      setKkiapayPublicKey(data.kkiapay_public_key || '')
+      setKkiapayPrivateKey(data.kkiapay_private_key || '')
+      setKkiapaySecretKey(data.kkiapay_secret_key || '')
+      setKkiapaySandbox(data.kkiapay_sandbox !== undefined ? Boolean(data.kkiapay_sandbox) : true)
       setLogoFile(null)
       setLogoPreview(null)
     } catch (err: any) {
@@ -115,6 +132,10 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
         formData.append('signature_url', signatureUrl)
         formData.append('signature_texte', signatureTexte)
         formData.append('copyright_texte', copyrightTexte)
+        formData.append('kkiapay_public_key', kkiapayPublicKey)
+        formData.append('kkiapay_private_key', kkiapayPrivateKey)
+        formData.append('kkiapay_secret_key', kkiapaySecretKey)
+        formData.append('kkiapay_sandbox', kkiapaySandbox ? '1' : '0')
 
         res = await updateAdminPlatformSettings(token, formData)
       } else {
@@ -132,6 +153,10 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
           signature_url: signatureUrl,
           signature_texte: signatureTexte,
           copyright_texte: copyrightTexte,
+          kkiapay_public_key: kkiapayPublicKey,
+          kkiapay_private_key: kkiapayPrivateKey,
+          kkiapay_secret_key: kkiapaySecretKey,
+          kkiapay_sandbox: kkiapaySandbox,
         })
       }
 
@@ -139,13 +164,17 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
       broadcastSettingsUpdate(res.data)
 
       setLogoUrl(res.data.logo_url)
+      setKkiapayPublicKey(res.data.kkiapay_public_key || '')
+      setKkiapayPrivateKey(res.data.kkiapay_private_key || '')
+      setKkiapaySecretKey(res.data.kkiapay_secret_key || '')
+      setKkiapaySandbox(res.data.kkiapay_sandbox !== undefined ? Boolean(res.data.kkiapay_sandbox) : true)
       setLogoFile(null)
       setLogoPreview(null)
 
       onToast({
         tone: 'success',
         title: 'Paramètres mis à jour',
-        message: 'Les nouveaux paramètres ont été enregistrés et sont actifs sur tout le site.',
+        message: 'Les nouveaux paramètres et clés API de paiement ont été enregistrés avec succès.',
       })
     } catch (err: any) {
       onToast({
@@ -181,6 +210,10 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
       setSignatureUrl(res.data.signature_url)
       setSignatureTexte(res.data.signature_texte)
       setCopyrightTexte(res.data.copyright_texte)
+      setKkiapayPublicKey(res.data.kkiapay_public_key || '')
+      setKkiapayPrivateKey(res.data.kkiapay_private_key || '')
+      setKkiapaySecretKey(res.data.kkiapay_secret_key || '')
+      setKkiapaySandbox(res.data.kkiapay_sandbox !== undefined ? Boolean(res.data.kkiapay_sandbox) : true)
       setLogoFile(null)
       setLogoPreview(null)
 
@@ -467,7 +500,160 @@ export const GestionParametres: React.FC<GestionParametresProps> = ({ token, onT
           </div>
         </div>
 
-        {/* ── 3. CRÉDITS & BAS DE PAGE ── */}
+        {/* ── 3. PASSERELLE DE PAIEMENT & CLÉS API (KKIAPAY / MOBILE MONEY) ── */}
+        <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200/90 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                    Passerelle de Paiement Mobile Money & Packs (Kkiapay)
+                  </h2>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                      kkiapaySandbox
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${kkiapaySandbox ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                    {kkiapaySandbox ? 'Mode Sandbox (Test)' : 'Mode Production (Live)'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Gérez facilement les clés d'API Kkiapay pour les encaissements MTN Mobile Money, Moov Money et Cartes Bancaires.
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle Sandbox / Live */}
+            <div className="flex items-center gap-3 p-1.5 bg-slate-100 rounded-xl border border-slate-200/80 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setKkiapaySandbox(true)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  kkiapaySandbox
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Test (Sandbox)
+              </button>
+              <button
+                type="button"
+                onClick={() => setKkiapaySandbox(false)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  !kkiapaySandbox
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Production (En direct)
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Clé Publique (Public Key) */}
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-blue-600" />
+                  Clé Publique Kkiapay (Public Key)
+                </span>
+                <span className="text-[11px] font-medium text-slate-400 lowercase">exposée au widget frontend</span>
+              </label>
+              <input
+                type="text"
+                value={kkiapayPublicKey}
+                onChange={(e) => setKkiapayPublicKey(e.target.value)}
+                placeholder="Ex: aa4b4f9052d511f18d492b2bdfbe5c62"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 bg-slate-50/50 focus:bg-white transition-all"
+              />
+              <p className="text-[11px] text-slate-400">
+                Cette clé permet d'afficher la fenêtre de paiement Kkiapay lors de l'achat d'un pack de publication par un démarcheur ou une boutique.
+              </p>
+            </div>
+
+            {/* Clé Privée (Private Key) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-emerald-600" />
+                  Clé Privée (Private Key)
+                </span>
+                <span className="text-[11px] font-medium text-emerald-600">Sécurisée côté serveur</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPrivateKey ? 'text' : 'password'}
+                  value={kkiapayPrivateKey}
+                  onChange={(e) => setKkiapayPrivateKey(e.target.value)}
+                  placeholder="Ex: tpk_..."
+                  className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 bg-slate-50/50 focus:bg-white transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPrivateKey((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  title={showPrivateKey ? 'Masquer la clé' : 'Afficher la clé'}
+                >
+                  {showPrivateKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Utilisée par l'API pour vérifier les transactions en direct auprès de Kkiapay avant de créditer le compte.
+              </p>
+            </div>
+
+            {/* Clé Secrète (Secret Key) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-indigo-600" />
+                  Clé Secrète (Secret Key)
+                </span>
+                <span className="text-[11px] font-medium text-slate-400">Optionnelle</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showSecretKey ? 'text' : 'password'}
+                  value={kkiapaySecretKey}
+                  onChange={(e) => setKkiapaySecretKey(e.target.value)}
+                  placeholder="Ex: sec_..."
+                  className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 bg-slate-50/50 focus:bg-white transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecretKey((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  title={showSecretKey ? 'Masquer la clé' : 'Afficher la clé'}
+                >
+                  {showSecretKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Clé secrète additionnelle pour la vérification des signatures de webhooks éventuels.
+              </p>
+            </div>
+          </div>
+
+          {/* Guide d'aide rapide */}
+          <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-100 flex items-start gap-3">
+            <HelpCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-blue-900 space-y-1">
+              <p className="font-bold">Où trouver vos clés API Kkiapay ?</p>
+              <p className="text-blue-800/90 leading-relaxed">
+                Connectez-vous à votre tableau de bord <a href="https://kkiapay.me" target="_blank" rel="noreferrer" className="font-semibold underline hover:text-blue-950">Kkiapay (kkiapay.me)</a>, rendez-vous dans le menu <b>Développeurs &gt; Clés d'API</b>, puis copiez votre clé publique et votre clé privée correspondante (soit Sandbox pour vos tests, soit Production pour recevoir des paiements réels). Collez-les ici et cliquez sur <b>Enregistrer les paramètres</b> : la prise en compte est immédiate, aucune modification du code n'est nécessaire.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 4. CRÉDITS & BAS DE PAGE ── */}
         <div className="bg-white rounded-xl p-4 sm:p-6 border border-slate-200/90 shadow-xs space-y-5">
           <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
             <Sparkles className="w-5 h-5 text-indigo-600" />

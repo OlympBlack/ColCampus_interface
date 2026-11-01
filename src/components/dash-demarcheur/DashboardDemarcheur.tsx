@@ -149,7 +149,10 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
                                 />
                             </div>
                             <div className="lg:col-span-2">
-                                <HistoriqueAchats transactions={data.portefeuille.transactions_recentes || []} />
+                                <HistoriqueAchats
+                                    transactions={data.portefeuille?.historique || data.portefeuille?.transactions_recentes || []}
+                                    achats={data.portefeuille?.achats_recents || []}
+                                />
                             </div>
                         </div>
                     </div>

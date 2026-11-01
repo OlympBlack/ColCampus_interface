@@ -6,6 +6,8 @@ import { acheterPack, fetchForfaits } from '../services/api'
 import { getDashboardPath } from '../utils/auth'
 import { formatPrice } from '../utils/format'
 
+import { usePlatformSettings } from '../hooks/usePlatformSettings'
+
 interface PageForfaitsProps {
   session: AuthSession
   onToast: (toast: ToastDraft) => void
@@ -26,6 +28,8 @@ export interface KkiapayPaymentRequest {
   email: string
   phone?: string
   theme?: string
+  key?: string
+  sandbox?: boolean
 }
 
 export function isKkiapayReady() {
@@ -88,8 +92,8 @@ export function requestKkiapayPayment(request: KkiapayPaymentRequest): Promise<s
     try {
       window.openKkiapayWidget?.({
         amount: request.amount,
-        key: (import.meta as any).env.VITE_KKIAPAY_PUBLIC_KEY || 'aa4b4f9052d511f18d492b2bdfbe5c62',
-        sandbox: true,
+        key: request.key || (import.meta as any).env.VITE_KKIAPAY_PUBLIC_KEY || 'aa4b4f9052d511f18d492b2bdfbe5c62',
+        sandbox: request.sandbox !== undefined ? request.sandbox : true,
         position: 'center',
         theme: request.theme ?? '#a4c639',
         fullname: request.fullname,
@@ -108,6 +112,7 @@ export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps
   const [forfaits, setForfaits] = useState<ForfaitPublication[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [buyingId, setBuyingId] = useState<number | null>(null)
+  const { settings } = usePlatformSettings()
 
   const onToastRef = useRef(onToast)
   useEffect(() => {
@@ -144,14 +149,25 @@ export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps
         fullname: `${session.user.prenoms} ${session.user.name}`.trim(),
         email: session.user.email,
         phone: session.user.telephone,
+        key: settings.kkiapay_public_key,
+        sandbox: settings.kkiapay_sandbox,
       })
 
-      await acheterPack(session.token, forfait.id, transactionId, 'kkiapay')
-      onToast({ tone: 'success', title: 'Paiement réussi', message: 'Votre pack a été activé avec succès !' })
+      const res = await acheterPack(session.token, forfait.id, transactionId, 'kkiapay')
+      const restants = (res as any)?.portefeuille?.credits_restants
+
+      onToast({
+        tone: 'success',
+        title: 'Pack activé avec succès !',
+        message: restants !== undefined
+          ? `+${forfait.nombre_publications} crédits ajoutés. Votre solde disponible est de ${restants} crédits.`
+          : `Votre pack « ${forfait.titre} » a été activé avec succès !`,
+      })
 
       if (!isEmbedded) {
         window.setTimeout(() => {
-          window.location.hash = '#' + getDashboardPath(session.user.role)
+          const targetTab = (session.user.role === 'demarcheur' || session.user.role === 'boutique') ? '?tab=credits' : ''
+          window.location.hash = '#' + getDashboardPath(session.user.role) + targetTab
         }, 1500)
       }
     } catch (error) {

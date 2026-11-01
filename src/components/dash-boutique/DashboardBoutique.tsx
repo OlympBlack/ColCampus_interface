@@ -1,6 +1,9 @@
 import React from 'react';
 import type { AuthSession, BoutiqueDashboardData } from '../../types';
 import { CarteStatistique } from '../dash-demarcheur/CarteStatistique';
+import { WidgetCredits } from '../dash-demarcheur/WidgetCredits';
+import { HistoriqueAchats } from '../dash-demarcheur/HistoriqueAchats';
+import { PageForfaits } from '../PageForfaits';
 import { UiIcon } from '../UiIcons';
 import { VerificationMini, ProfileTab } from '../Dashboard';
 import { DashboardPageHeader, RefreshButton } from '../dash-shared/DashboardPageHeader';
@@ -123,13 +126,23 @@ export const DashboardBoutique: React.FC<DashboardBoutiqueProps> = ({
                         </div>
 
                         <div className="space-y-4">
+                            {/* Widget Portefeuille & Crédits pour Boutique */}
+                            {data.portefeuille && (
+                                <WidgetCredits
+                                    portefeuille={data.portefeuille}
+                                    onBuyMore={() => { window.location.hash = '#/forfaits-publications' }}
+                                    onViewHistory={() => { window.location.hash = '#/dashboard/boutique?tab=credits' }}
+                                />
+                            )}
+
                             <VerificationMini verification={dashboard?.verification ?? {}} />
                             <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
                                 <h3 className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Accès rapides</h3>
                                 <div className="mt-3 flex flex-col gap-1.5">
                                     {[
                                         { href: '#/dashboard/boutique?tab=campaigns', icon: 'store' as const, label: 'Mes campagnes' },
-                                        { href: '#/dashboard/boutique?tab=stats', icon: 'document' as const, label: 'Statistiques' },
+                                        { href: '#/dashboard/boutique?tab=credits', icon: 'document' as const, label: 'Packs & Crédits' },
+                                        { href: '#/dashboard/boutique?tab=stats', icon: 'eye' as const, label: 'Statistiques' },
                                         { href: '#/dashboard/boutique?tab=preferences', icon: 'user' as const, label: 'Profil de la boutique' },
                                         { href: '#/dashboard/boutique?tab=verification', icon: 'shield' as const, label: 'Vérification' },
                                     ].map((item) => (
@@ -188,6 +201,50 @@ export const DashboardBoutique: React.FC<DashboardBoutiqueProps> = ({
                 </div>
             );
             
+        case 'credits':
+            return (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <DashboardPageHeader
+                        eyebrow="Espace boutique"
+                        title="Portefeuille & Crédits de publication"
+                        subtitle="Gérez vos crédits, suivez vos campagnes diffusées et consultez l'historique complet de vos achats de packs."
+                        actions={
+                            <>
+                                <RefreshButton onClick={onRefreshData} />
+                                <a
+                                    href="#/forfaits-publications"
+                                    className="flex h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700"
+                                >
+                                    <UiIcon name="plus" className="h-3.5 w-3.5" />
+                                    Acheter un pack
+                                </a>
+                            </>
+                        }
+                    />
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1 space-y-6">
+                            {data.portefeuille && (
+                                <WidgetCredits
+                                    portefeuille={data.portefeuille}
+                                    onBuyMore={() => { window.location.hash = '#/forfaits-publications' }}
+                                    onViewHistory={() => { window.location.hash = '#/dashboard/boutique?tab=credits' }}
+                                />
+                            )}
+                        </div>
+                        <div className="lg:col-span-2">
+                            <HistoriqueAchats
+                                transactions={data.portefeuille?.historique || data.portefeuille?.transactions_recentes || []}
+                                achats={data.portefeuille?.achats_recents || []}
+                            />
+                        </div>
+                    </div>
+                </div>
+            );
+
+        case 'forfaits':
+            return <PageForfaits session={session} onToast={onToast} />;
+
         case 'stats':
             return (
                 <div className="space-y-4 animate-in fade-in duration-300">

@@ -33,6 +33,7 @@ import { PageForfaits, isKkiapayReady, requestKkiapayPayment } from './PageForfa
 import { WidgetPortefeuille } from './WidgetPortefeuille'
 import type { ToastDraft } from './ToastViewport'
 import { compressImage, compressImages } from '../utils/imageCompressor'
+import { usePlatformSettings } from '../hooks/usePlatformSettings'
 
 interface PublishWorkspaceProps {
   session: AuthSession
@@ -356,6 +357,8 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
     setStepIndex((index) => Math.max(index - 1, 0))
   }
 
+  const { settings } = usePlatformSettings()
+
   /* ─── Achat de crédit sur la page récap ───────────── */
 
   async function handleAchatForfait(forfait: ForfaitPublication) {
@@ -365,14 +368,22 @@ export function PublishWorkspace({ session, onToast, onClose }: PublishWorkspace
         fullname: `${session.user.prenoms} ${session.user.name}`.trim(),
         email: session.user.email,
         phone: session.user.telephone,
+        key: settings.kkiapay_public_key,
+        sandbox: settings.kkiapay_sandbox,
       })
 
-      await acheterPack(session.token, forfait.id, transactionId, 'kkiapay')
+      const res = await acheterPack(session.token, forfait.id, transactionId, 'kkiapay')
 
       const response = await fetchPortefeuille(session.token)
       setPortefeuille(response.portefeuille)
       setTransactions(response.transactions ?? [])
-      onToast({ tone: 'success', title: 'Crédits ajoutés', message: 'Votre pack de publication est actif.' })
+
+      const restants = (res as any)?.portefeuille?.credits_restants ?? response.portefeuille?.credits_restants
+      onToast({
+        tone: 'success',
+        title: 'Pack activé avec succès',
+        message: `+${forfait.nombre_publications} crédits ajoutés. Solde disponible : ${restants} crédits.`,
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Le paiement a échoué.'
       onToast({

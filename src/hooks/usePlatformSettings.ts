@@ -16,6 +16,8 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   signature_url: 'https://juleschrist-portfolio.vercel.app/',
   signature_texte: 'Conçu & développé par',
   copyright_texte: 'ColEtuBenin. Tous droits réservés.',
+  kkiapay_public_key: 'aa4b4f9052d511f18d492b2bdfbe5c62',
+  kkiapay_sandbox: true,
 }
 
 let cachedSettings: PlatformSettings | null = null

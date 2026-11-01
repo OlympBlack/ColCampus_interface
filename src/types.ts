@@ -453,6 +453,8 @@ export interface DemarcheurDashboardData {
   }
   portefeuille: Portefeuille & {
     transactions_recentes: TransactionCredit[]
+    historique?: TransactionCredit[]
+    achats_recents?: any[]
   }
 }
 
@@ -461,6 +463,12 @@ export interface BoutiqueDashboardData {
   statistiques: {
     vues_total: number
     clics_total: number
+    credits_restants?: number
+  }
+  portefeuille?: Portefeuille & {
+    transactions_recentes?: TransactionCredit[]
+    historique?: TransactionCredit[]
+    achats_recents?: any[]
   }
 }
 

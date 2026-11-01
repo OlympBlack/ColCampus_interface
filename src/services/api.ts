@@ -959,7 +959,7 @@ export async function deleteAdminContact(token: string, id: number) {
 // ─────────────────────────────────────────────────────────────────
 
 export interface PlatformSettings {
-  id: number
+  id?: number
   nom_plateforme: string
   slogan: string
   description: string
@@ -973,11 +973,22 @@ export interface PlatformSettings {
   signature_url: string
   signature_texte: string
   copyright_texte: string
+  kkiapay_public_key?: string
+  kkiapay_private_key?: string
+  kkiapay_secret_key?: string
+  kkiapay_sandbox?: boolean
   updated_at?: string
 }
 
 export async function fetchPlatformSettings(): Promise<PlatformSettings> {
   const res = await requestJson<{ success: boolean; data: PlatformSettings }>('/settings')
+  return res.data
+}
+
+export async function fetchAdminPlatformSettings(token: string): Promise<PlatformSettings> {
+  const res = await requestJson<{ success: boolean; data: PlatformSettings }>('/admin/settings', {
+    headers: withAuthHeaders(token),
+  })
   return res.data
 }
 
