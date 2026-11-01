@@ -217,12 +217,18 @@ export function LoginForm({
               </button>
             </div>
 
-            <p className="text-center text-xs sm:text-sm text-slate-500 mt-6 pt-4 border-t border-slate-100">
-              Pas encore de compte ?{' '}
-              <a className="text-green-700 font-bold hover:underline ml-1" href="#/inscription">
-                Créer un compte
-              </a>
-            </p>
+            <div className="text-center text-xs sm:text-sm text-slate-500 mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2">
+              <span>Pas encore de compte ?</span>
+              <span className="flex items-center gap-2">
+                <a className="text-green-700 font-bold hover:underline" href="#/inscription">
+                  Étudiant
+                </a>
+                <span className="text-slate-300">·</span>
+                <a className="text-emerald-700 font-bold hover:underline" href="#/inscription-pro">
+                  Démarcheur ou Boutique
+                </a>
+              </span>
+            </div>
           </form>
         </div>
       </div>

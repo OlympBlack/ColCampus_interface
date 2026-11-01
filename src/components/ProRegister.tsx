@@ -373,12 +373,17 @@ export function ProRegisterFlow({
             )}
           </div>
 
-          <p className="text-center text-xs sm:text-sm text-slate-500 mt-6 pt-4 border-t border-slate-100">
-            Déjà inscrit ?{' '}
-            <a href="#/connexion" className="text-green-700 font-bold hover:underline ml-1">
+          <div className="text-center text-xs sm:text-sm text-slate-500 mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <span>Vous êtes étudiant ?</span>
+            <a href="#/inscription" className="text-blue-700 font-bold hover:underline">
+              Inscription étudiant ici
+            </a>
+            <span className="hidden sm:inline text-slate-300">·</span>
+            <span>Déjà inscrit ?</span>
+            <a href="#/connexion" className="text-green-700 font-bold hover:underline">
               Se connecter
             </a>
-          </p>
+          </div>
         </div>
       </div>
     </div>
