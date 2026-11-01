@@ -6,7 +6,9 @@ import { acheterPack, fetchForfaits } from '../services/api'
 import { getDashboardPath } from '../utils/auth'
 import { formatPrice } from '../utils/format'
 
-import { usePlatformSettings } from '../hooks/usePlatformSettings'
+// Clé publique Kkiapay lue depuis les variables d'environnement (.env)
+const KKIAPAY_PUBLIC_KEY = (import.meta as any).env.VITE_KKIAPAY_PUBLIC_KEY as string | undefined
+const KKIAPAY_SANDBOX = (import.meta as any).env.VITE_KKIAPAY_SANDBOX !== 'false'
 
 interface PageForfaitsProps {
   session: AuthSession
@@ -112,7 +114,6 @@ export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps
   const [forfaits, setForfaits] = useState<ForfaitPublication[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [buyingId, setBuyingId] = useState<number | null>(null)
-  const { settings } = usePlatformSettings()
 
   const onToastRef = useRef(onToast)
   useEffect(() => {
@@ -149,8 +150,8 @@ export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps
         fullname: `${session.user.prenoms} ${session.user.name}`.trim(),
         email: session.user.email,
         phone: session.user.telephone,
-        key: settings.kkiapay_public_key,
-        sandbox: settings.kkiapay_sandbox,
+        key: KKIAPAY_PUBLIC_KEY,
+        sandbox: KKIAPAY_SANDBOX,
       })
 
       const res = await acheterPack(session.token, forfait.id, transactionId, 'kkiapay')
@@ -158,18 +159,18 @@ export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps
 
       onToast({
         tone: 'success',
-        title: 'Pack activé avec succès !',
+        title: '🎉 Pack activé avec succès !',
         message: restants !== undefined
-          ? `+${forfait.nombre_publications} crédits ajoutés. Votre solde disponible est de ${restants} crédits.`
+          ? `+${forfait.nombre_publications} crédits ajoutés — Solde disponible : ${restants} crédit${restants > 1 ? 's' : ''}`
           : `Votre pack « ${forfait.titre} » a été activé avec succès !`,
       })
 
-      if (!isEmbedded) {
-        window.setTimeout(() => {
-          const targetTab = (session.user.role === 'demarcheur' || session.user.role === 'boutique') ? '?tab=credits' : ''
-          window.location.hash = '#' + getDashboardPath(session.user.role) + targetTab
-        }, 1500)
-      }
+      // Redirection rapide vers l'onglet crédits pour voir le solde mis à jour
+      const dashPath = getDashboardPath(session.user.role)
+      const targetTab = (session.user.role === 'demarcheur' || session.user.role === 'boutique') ? '?tab=credits' : ''
+      window.setTimeout(() => {
+        window.location.hash = '#' + dashPath + targetTab
+      }, 800)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'La validation du paiement a échoué.'
       onToast({
