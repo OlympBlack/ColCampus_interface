@@ -192,42 +192,6 @@ export function MessengerPopover({ session, isOpen, onClose, onUnreadChange }: M
 
     if (pushPermission === 'granted' && pushSubscribed) {
       return (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px',
-            padding: '6px 14px',
-            background: '#f0fdf4',
-            borderBottom: '1px solid #dcfce7',
-            fontSize: '11px',
-            color: '#166534',
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            {pushTestSuccess ? '🔔 Notification envoyée en haut !' : '✅ Notifications push actives sur ce téléphone'}
-          </span>
-          <button
-            type="button"
-            onClick={handleTestPush}
-            style={{
-              background: '#16a34a',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '2px 8px',
-              fontSize: '10.5px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-            title="Tester la notification en haut du téléphone"
-          >
-            Tester
-          </button>
-        </div>
       )
     }
 
