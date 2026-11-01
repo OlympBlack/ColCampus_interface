@@ -19,6 +19,7 @@ interface DashboardStudentProps {
     activeTab: string;
     onAnnouncementEdit?: (annonce: Annonce) => void;
     onAnnouncementDelete?: (annonce: Annonce) => void;
+    onAnnouncementStatusChange?: (id: number, status: string) => void;
     onToast: (toast: any) => void;
     onRefreshData: () => void;
     onSessionChange: (session: AuthSession) => void;
@@ -63,6 +64,7 @@ export const DashboardStudent: React.FC<DashboardStudentProps> = ({
     activeTab,
     onAnnouncementEdit,
     onAnnouncementDelete,
+    onAnnouncementStatusChange,
     onToast,
     onRefreshData,
     onSessionChange,
@@ -191,6 +193,56 @@ export const DashboardStudent: React.FC<DashboardStudentProps> = ({
                 </div>
             );
         }
+
+        case 'announcements':
+        case 'annonces':
+            return (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                    <DashboardPageHeader
+                        eyebrow="Espace étudiant"
+                        title="Mes annonces publiées"
+                        subtitle="Gérez vos annonces de colocation, chambres ou recherche de binôme."
+                        actions={
+                            <>
+                                <RefreshButton onClick={onRefreshData} />
+                                <a
+                                    href="#/publier"
+                                    className="flex h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-xs font-semibold text-white shadow-xs transition hover:bg-blue-700"
+                                >
+                                    <UiIcon name="plus" className="h-3.5 w-3.5" />
+                                    Publier une annonce
+                                </a>
+                            </>
+                        }
+                    />
+
+                    {data.mes_annonces && data.mes_annonces.length > 0 ? (
+                        <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
+                            <ListeAnnonces
+                                announcements={data.mes_annonces}
+                                onEdit={onAnnouncementEdit!}
+                                onDelete={onAnnouncementDelete!}
+                                onStatusChange={onAnnouncementStatusChange || (() => {})}
+                            />
+                        </div>
+                    ) : (
+                        <EmptyState
+                            icon={<UiIcon name="document" className="h-5 w-5" />}
+                            title="Aucune annonce publiée"
+                            description="Vous n'avez pas encore publié d'annonce. Proposez une chambre ou trouvez un binôme dès aujourd'hui."
+                            action={
+                                <a
+                                    href="#/publier"
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                                >
+                                    <UiIcon name="plus" className="h-3.5 w-3.5" />
+                                    Publier ma première annonce
+                                </a>
+                            }
+                        />
+                    )}
+                </div>
+            );
 
         case 'avis':
             return (

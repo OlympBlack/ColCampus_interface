@@ -115,6 +115,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
                 );
 
             case 'annonces':
+            case 'announcements':
                 return (
                     <div className="space-y-4 animate-in fade-in duration-300">
                         <div className="flex items-center justify-between">

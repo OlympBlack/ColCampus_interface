@@ -126,10 +126,18 @@ function tabIdFromHash(allowed: NavTab[]): string {
   const requested = params?.get('tab')
   if (!requested) return 'overview'
   // `?tab=profil` is used by App/ProfileCompletionModal → aliases to the profile tab
-  const normalized =
+  let normalized =
     requested === 'profil' || requested === 'profile' || requested === 'compte'
       ? 'preferences'
       : requested
+
+  // Alias annonces / announcements selon les onglets autorisés
+  if (normalized === 'annonces' && !allowed.some((t) => t.id === 'annonces') && allowed.some((t) => t.id === 'announcements')) {
+    normalized = 'announcements'
+  } else if (normalized === 'announcements' && !allowed.some((t) => t.id === 'announcements') && allowed.some((t) => t.id === 'annonces')) {
+    normalized = 'annonces'
+  }
+
   return allowed.some((t) => t.id === normalized) ? normalized : 'overview'
 }
 
@@ -1624,6 +1632,7 @@ function DashboardLayout({
         activeTab={activeTab}
         onAnnouncementEdit={onAnnouncementEdit}
         onAnnouncementDelete={onAnnouncementDelete}
+        onAnnouncementStatusChange={onAnnouncementStatusChange}
         onToast={onToast}
         onRefreshData={onRefreshData}
         onSessionChange={onSessionChange}
