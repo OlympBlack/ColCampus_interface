@@ -456,30 +456,6 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
             </ul>
             <ul className="right-icons d-none d-sm-flex align-items-center m-0 p-0" style={{ gap: '14px', listStyle: 'none' }}>
               <li>
-                <a
-                  href="#/inscription-pro"
-                  style={{
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    background: 'rgba(255, 255, 255, 0.16)',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.28)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.16)' }}
-                >
-                  <i className="fa fa-briefcase"></i>
-                  <span>Espace Pro & Boutiques</span>
-                </a>
-              </li>
-              <li>
                 <a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook">
                   <i className="fa fa-facebook"></i>
                 </a>
@@ -674,17 +650,6 @@ export function SiteHeader({ route, session, onLogout, isLoggingOut }: SiteHeade
                 <li className={`nav-item${route.name === 'contact' ? ' active' : ''}`}>
                   <a className="nav-link" href="#/contact" onClick={closeMenu}>
                     <span>Contact</span>
-                  </a>
-                </li>
-                <li className="nav-item d-lg-none">
-                  <a
-                    className="nav-link"
-                    href="#/inscription-pro"
-                    onClick={closeMenu}
-                    style={{ color: '#a4c639', fontWeight: 700 }}
-                  >
-                    <i className="fa fa-briefcase mr-1.5"></i>
-                    <span>Espace Démarcheurs & Boutiques</span>
                   </a>
                 </li>
               </ul>
