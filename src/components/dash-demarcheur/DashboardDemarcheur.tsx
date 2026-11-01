@@ -160,7 +160,7 @@ export const DashboardDemarcheur: React.FC<DashboardDemarcheurProps> = ({
 
 
             case 'forfaits':
-                return <ForfaitsPage session={session} onToast={onToast} />;
+                return <ForfaitsPage session={session} onToast={onToast} onRefresh={onRefreshData} />;
 
             case 'messagerie':
                 return (

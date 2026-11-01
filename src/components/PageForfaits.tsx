@@ -14,6 +14,8 @@ interface PageForfaitsProps {
   session: AuthSession
   onToast: (toast: ToastDraft) => void
   isEmbedded?: boolean
+  onSuccess?: (result: any) => void
+  onRefresh?: () => void
 }
 
 declare global {
@@ -110,7 +112,7 @@ export function requestKkiapayPayment(request: KkiapayPaymentRequest): Promise<s
   })
 }
 
-export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps) {
+export function PageForfaits({ session, onToast, isEmbedded, onSuccess, onRefresh }: PageForfaitsProps) {
   const [forfaits, setForfaits] = useState<ForfaitPublication[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [buyingId, setBuyingId] = useState<number | null>(null)
@@ -157,6 +159,17 @@ export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps
       const res = await acheterPack(session.token, forfait.id, transactionId, 'kkiapay')
       const restants = (res as any)?.portefeuille?.credits_restants
 
+      // Mettre à jour immédiatement les écouteurs locaux et globaux
+      if (onSuccess) onSuccess(res)
+      if (onRefresh) onRefresh()
+
+      window.dispatchEvent(
+        new CustomEvent('colcampus:credits-updated', {
+          detail: res,
+        })
+      )
+      window.dispatchEvent(new CustomEvent('dashboard:refresh'))
+
       onToast({
         tone: 'success',
         title: '🎉 Pack activé avec succès !',
@@ -165,12 +178,18 @@ export function PageForfaits({ session, onToast, isEmbedded }: PageForfaitsProps
           : `Votre pack « ${forfait.titre} » a été activé avec succès !`,
       })
 
-      // Redirection rapide vers l'onglet crédits pour voir le solde mis à jour
+      // Redirection immédiate vers l'onglet crédits pour voir le solde mis à jour
       const dashPath = getDashboardPath(session.user.role)
       const targetTab = (session.user.role === 'demarcheur' || session.user.role === 'boutique') ? '?tab=credits' : ''
+      const targetHash = '#' + dashPath + targetTab
+
       window.setTimeout(() => {
-        window.location.hash = '#' + dashPath + targetTab
-      }, 800)
+        if (window.location.hash === targetHash) {
+          window.dispatchEvent(new CustomEvent('dashboard:refresh'))
+        } else {
+          window.location.hash = targetHash
+        }
+      }, 500)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'La validation du paiement a échoué.'
       onToast({

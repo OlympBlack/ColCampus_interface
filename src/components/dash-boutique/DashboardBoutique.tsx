@@ -243,7 +243,7 @@ export const DashboardBoutique: React.FC<DashboardBoutiqueProps> = ({
             );
 
         case 'forfaits':
-            return <PageForfaits session={session} onToast={onToast} />;
+            return <PageForfaits session={session} onToast={onToast} onRefresh={onRefreshData} />;
 
         case 'stats':
             return (

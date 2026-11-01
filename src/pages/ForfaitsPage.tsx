@@ -6,16 +6,18 @@ import type { AuthSession } from '../types'
 interface ForfaitsPageProps {
   session: AuthSession
   onToast: (toast: ToastDraft) => void
+  onRefresh?: () => void
+  onSuccess?: (res: any) => void
 }
 
-export function ForfaitsPage({ session, onToast }: ForfaitsPageProps) {
+export function ForfaitsPage({ session, onToast, onRefresh, onSuccess }: ForfaitsPageProps) {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [])
 
   return (
     <section className="container py-5">
-      <PageForfaits session={session} onToast={onToast} />
+      <PageForfaits session={session} onToast={onToast} onRefresh={onRefresh} onSuccess={onSuccess} />
     </section>
   )
 }

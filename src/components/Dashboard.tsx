@@ -1701,12 +1701,84 @@ export function DashboardWorkspace({
     }
   }, [])
 
+  const refreshData = useCallback(async () => {
+    try {
+      const res = await fetchDashboard(session.token)
+      setDashboard(res.data)
+    } catch (err) {
+      onToast({ tone: 'error', title: 'Actualisation impossible', message: errMessage(err) })
+    } finally {
+      void refreshNotifications(true)
+    }
+  }, [session.token, setDashboard, onToast, refreshNotifications])
+
   // Synchronisation avec l'URL (#/dashboard/<role>?tab=…)
   useEffect(() => {
-    const onHashChange = () => setActiveTab(tabIdFromHash(tabsForRole(session.user.role)))
+    const onHashChange = () => {
+      const nextTab = tabIdFromHash(tabsForRole(session.user.role))
+      setActiveTab(nextTab)
+      if (nextTab === 'credits' || nextTab === 'overview') {
+        void refreshData()
+      }
+    }
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
-  }, [session.user.role])
+  }, [session.user.role, refreshData])
+
+  // Écoute des événements d'actualisation immédiate des crédits et du dashboard
+  useEffect(() => {
+    const handleCreditsUpdated = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail
+      if (detail?.portefeuille) {
+        setDashboard((prev: any) => {
+          if (!prev) return prev
+          const role = session.user.role
+          if (role === 'demarcheur' && prev.demarcheur) {
+            return {
+              ...prev,
+              demarcheur: {
+                ...prev.demarcheur,
+                portefeuille: {
+                  ...prev.demarcheur.portefeuille,
+                  ...detail.portefeuille,
+                },
+                statistiques: {
+                  ...prev.demarcheur.statistiques,
+                  credits_restants: detail.portefeuille.credits_restants ?? prev.demarcheur.statistiques?.credits_restants,
+                },
+              },
+            }
+          }
+          if (role === 'boutique' && prev.boutique) {
+            return {
+              ...prev,
+              boutique: {
+                ...prev.boutique,
+                portefeuille: {
+                  ...prev.boutique.portefeuille,
+                  ...detail.portefeuille,
+                },
+              },
+            }
+          }
+          return prev
+        })
+      }
+      void refreshData()
+    }
+
+    const handleDashboardRefresh = () => {
+      void refreshData()
+    }
+
+    window.addEventListener('colcampus:credits-updated', handleCreditsUpdated)
+    window.addEventListener('dashboard:refresh', handleDashboardRefresh)
+
+    return () => {
+      window.removeEventListener('colcampus:credits-updated', handleCreditsUpdated)
+      window.removeEventListener('dashboard:refresh', handleDashboardRefresh)
+    }
+  }, [refreshData, session.user.role, setDashboard])
 
   useEffect(() => {
     setMobileSidebarOpen(false)
@@ -1718,20 +1790,12 @@ export function DashboardWorkspace({
       const path = getDashboardPath(session.user.role)
       const nextHash = `#${path}?tab=${tabId}`
       if (window.location.hash !== nextHash) window.location.hash = nextHash
+      if (tabId === 'credits' || tabId === 'overview') {
+        void refreshData()
+      }
     },
-    [session.user.role],
+    [session.user.role, refreshData],
   )
-
-  const refreshData = useCallback(async () => {
-    try {
-      const res = await fetchDashboard(session.token)
-      setDashboard(res.data)
-    } catch (err) {
-      onToast({ tone: 'error', title: 'Actualisation impossible', message: errMessage(err) })
-    } finally {
-      void refreshNotifications(true)
-    }
-  }, [session.token, setDashboard, onToast, refreshNotifications])
 
   // ─── CRUD annonces ─────────────────────────────────────────────
   const [editingAnnouncement, setEditingAnnouncement] = useState<Annonce | null>(null)
